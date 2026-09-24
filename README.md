@@ -1,5 +1,5 @@
 # CSC 3501 Game
 
-Authors: Carson, Hudson, Kaitly, Lydia, Quentin
+Authors: Carson, Hudson, Katlin, Lydia, Quentin
 
 Soon...
