@@ -6,6 +6,7 @@ export interface TutorialSession {
   progress: TutorialProgress
   sectionId: string | null
   stepIndex: number
+  ticks: number
 }
 
 let nextCircuitPart = 1
@@ -19,6 +20,7 @@ export function startSession(sections: readonly TutorialSection[], progress: Tut
     progress,
     sectionId: section?.id ?? null,
     stepIndex: section ? firstIncompleteStep(section, progress) : 0,
+    ticks: 0,
   }
 }
 
@@ -35,6 +37,7 @@ function completeStep(section: TutorialSection, session: TutorialSession, stepId
     progress,
     sectionId: finished ? null : section.id,
     stepIndex: finished ? 0 : session.stepIndex + 1,
+    ticks: session.ticks,
   }
 }
 
@@ -43,12 +46,14 @@ export function settleSession(
   session: TutorialSession,
   circuit: Circuit,
   nets: ReadonlyMap<string, boolean>,
+  ticks: number = session.ticks,
 ): TutorialSession {
   const section = findSection(sections, session.sectionId)
   const step = section?.steps[session.stepIndex]
-  if (!section || !step?.done || !step.done({ circuit, nets })) return session
+  const current = ticks === session.ticks ? session : { ...session, ticks }
+  if (!section || !step?.done || !step.done({ circuit, nets, ticks })) return current
 
-  return completeStep(section, session, step.id)
+  return completeStep(section, current, step.id)
 }
 
 export function advanceSession(sections: readonly TutorialSection[], session: TutorialSession): TutorialSession {
@@ -75,5 +80,5 @@ export function resumeSession(
   const section = findSection(sections, sectionId)
   if (!section) return session
 
-  return { ...session, sectionId, stepIndex: firstIncompleteStep(section, session.progress) }
+  return { ...session, sectionId, stepIndex: firstIncompleteStep(section, session.progress), ticks: 0 }
 }

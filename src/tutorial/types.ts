@@ -6,6 +6,7 @@ export type { TutorialTarget } from './targets.ts'
 export interface TutorialContext {
   circuit: Circuit
   nets: ReadonlyMap<string, boolean>
+  ticks: number
 }
 
 export interface TutorialStep {
