@@ -32,6 +32,14 @@ export const outputHigh = (name: string) => {
   return (context: TutorialContext): boolean => context.nets.get(name) === true
 }
 
+export const inputLow = (name: string) => {
+  return (context: TutorialContext): boolean => context.nets.get(name) !== true
+}
+
+export const outputLow = (name: string) => {
+  return (context: TutorialContext): boolean => context.nets.get(name) !== true
+}
+
 export const allOf = (...predicates: ((context: TutorialContext) => boolean)[]) => {
   return (context: TutorialContext): boolean => predicates.every((predicate) => predicate(context))
 }
