@@ -27,7 +27,7 @@ function PartPort({ portKey, label, side, lit, onWire }: PartPortProps) {
       >
         <PortDot lit={lit} />
       </div>
-      <span className={`absolute top-1/2 -translate-y-1/2 text-[10px] text-amber-600 ${side === 'left' ? 'left-3' : 'right-3'}`}>
+      <span className={`absolute top-1/2 -translate-y-1/2 text-[10px] text-mist-500 ${side === 'left' ? 'left-3' : 'right-3'}`}>
         {label}
       </span>
     </>
@@ -52,13 +52,13 @@ export default function PartShape({ part, wires, nets, onMove, onWire, onRemove 
     <div
       data-part={part.uid}
       onPointerDown={(e) => onMove(part.uid, e)}
-      className="absolute cursor-move border border-amber-500 bg-black"
+      className="absolute cursor-move border border-mist-700 bg-panel"
       style={{ left: part.x, top: part.y, width: PART_W, height: partHeight(part.componentId) }}
     >
-      <div className="flex items-center justify-between border-b border-amber-800 px-2" style={{ height: HEAD_H }}>
+      <div className="flex items-center justify-between border-b border-mist-900 px-2" style={{ height: HEAD_H }}>
         <span className="truncate text-xs">{getComponent(part.componentId)?.name ?? part.componentId}</span>
         <button
-          className="text-amber-700 hover:text-amber-300"
+          className="text-mist-600 hover:text-mist-100"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => onRemove(part.uid)}
           title="Remove this part"
