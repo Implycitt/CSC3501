@@ -36,6 +36,7 @@ function PaletteItem({
 
   return (
     <div
+      data-tutorial={`palette:${part.id}`}
       onPointerDown={(e) => onStartPart(part.id, e)}
       className="flex cursor-grab items-center justify-between gap-1 border border-amber-800 py-1 pl-1.5 pr-2 hover:border-amber-400"
     >
@@ -72,7 +73,7 @@ export default function Palette({
   const builtMatches = built.filter(visible)
 
   return (
-    <aside className="flex flex-col gap-3 md:max-h-[70vh]">
+    <aside data-tutorial="palette" className="flex flex-col gap-3 md:max-h-[70vh]">
       <input
         className="shrink-0 border border-amber-800 bg-transparent px-2 py-1 text-xs placeholder:text-amber-900 focus:border-amber-400 focus:outline-none"
         placeholder="Search parts"
@@ -106,7 +107,7 @@ export default function Palette({
         )}
       </div>
 
-      <section className="shrink-0 space-y-1 border-t border-amber-800 pt-3">
+      <section data-tutorial="ports" className="shrink-0 space-y-1 border-t border-amber-800 pt-3">
         <h2 className="text-amber-300">Ports</h2>
         <button className={`${buttonClass} block w-full`} onClick={onAddInput}>
           Add input
