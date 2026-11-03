@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { allComponents, builtId, getComponent } from '../../game/registry.ts'
 import { connectWire, EMPTY_CIRCUIT, rekeyCircuit, type Circuit, type PlacedPart, type Wire } from '../../game/circuit.ts'
 import { addDesign, designsUsing, loadDesigns, removeDesign, type SavedDesign } from '../../game/library.ts'
-import { CANVAS_H, CANVAS_W, CLICK_SLOP, HEAD_H, IO_H, IO_W, PART_W, anchorOf, ioPos, partHeight, portsOf } from './geometry.ts'
+import { CANVAS_H, CANVAS_W, CLICK_SLOP, HEAD_H, IO_H, IO_W, PART_W, anchorOf, ioPos, partHeight, portsOf, snap } from './geometry.ts'
 import { advance, createSim, type Sim } from './simulator.ts'
 import PartShape from './PartShape.tsx'
 import IoNode from './IoNode.tsx'
@@ -70,6 +70,10 @@ function Build() {
     capture(e)
     const point = canvasPoint(e.clientX, e.clientY)
     setDrag({ kind: 'part', uid, offsetX: point.x - part.x, offsetY: point.y - part.y })
+
+    if (circuit.parts[circuit.parts.length - 1]?.uid !== uid) {
+      setCircuit((current) => ({ ...current, parts: [...current.parts.filter((p) => p.uid !== uid), part] }))
+    }
   }
 
   const startIO = (key: string, e: ReactPointerEvent) => {
@@ -124,8 +128,8 @@ function Build() {
     if (drag.kind === 'part') {
       const { uid, offsetX, offsetY } = drag
       const position = {
-        x: clamp(point.x - offsetX, 0, CANVAS_W - PART_W),
-        y: clamp(point.y - offsetY, 0, CANVAS_H - HEAD_H),
+        x: snap(clamp(point.x - offsetX, 0, CANVAS_W - PART_W)),
+        y: snap(clamp(point.y - offsetY, 0, CANVAS_H - HEAD_H)),
       }
       setCircuit((current) => ({
         ...current,
@@ -150,8 +154,8 @@ function Build() {
     const part: PlacedPart = {
       uid: `p${nextUid++}`,
       componentId,
-      x: clamp(x, 0, CANVAS_W - PART_W),
-      y: clamp(y, 0, CANVAS_H - partHeight(componentId)),
+      x: snap(clamp(x, 0, CANVAS_W - PART_W)),
+      y: snap(clamp(y, 0, CANVAS_H - partHeight(componentId))),
     }
     setSelected(null)
     commit({ ...circuit, parts: [...circuit.parts, part] })
