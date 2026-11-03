@@ -22,6 +22,7 @@ import {
   persistProgress,
 } from '../../tutorial/progress.ts'
 import type { TutorialProgress } from '../../tutorial/types.ts'
+import { featuresFor } from '../../tutorial/features.ts'
 
 type Drag =
   | { kind: 'palette'; componentId: string; startX: number; startY: number; x: number; y: number }
@@ -82,6 +83,7 @@ function Build() {
 
   const activeSection = TUTORIAL_SECTIONS.find((section) => section.id === tutorial.sectionId)
   const activeStep = activeSection?.steps[tutorial.stepIndex]
+  const features = featuresFor(activeSection)
   const resumeSection = nextIncompleteSection(TUTORIAL_SECTIONS, tutorial.progress)
 
   const settleTutorial = (nextCircuit: Circuit, nextSim: Sim) => {
@@ -410,6 +412,8 @@ function Build() {
           onAddInput={() => addIO('in')}
           onAddOutput={() => addIO('out')}
           onAddClock={addClock}
+          allowPorts={features.addPorts}
+          allowDocs={features.componentDocs}
         />
 
         <div
@@ -503,6 +507,9 @@ function Build() {
           onLoadDesign={loadSaved}
           onDeleteDesign={deleteSaved}
           onClear={() => commit(EMPTY_CIRCUIT)}
+          allowSave={features.saveDesign}
+          allowLibrary={features.library}
+          allowClear={features.clearCanvas}
         />
       </div>
 

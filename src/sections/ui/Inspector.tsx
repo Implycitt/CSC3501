@@ -26,6 +26,9 @@ interface InspectorProps {
   onLoadDesign: (id: string) => void
   onDeleteDesign: (id: string) => void
   onClear: () => void
+  allowSave: boolean
+  allowLibrary: boolean
+  allowClear: boolean
 }
 
 export default function Inspector({
@@ -42,10 +45,13 @@ export default function Inspector({
   onLoadDesign,
   onDeleteDesign,
   onClear,
+  allowSave,
+  allowLibrary,
+  allowClear,
 }: InspectorProps) {
   return (
     <aside data-tutorial="inspector" className="space-y-4 md:col-span-2 lg:col-span-1">
-      <section className="space-y-2">
+      <section data-tutorial="simulation" className="space-y-2">
         <h2 className="text-amber-300">Simulation</h2>
         {error && <p className="text-red-400">{error}</p>}
         {circuit.inputs.includes('clk') && (
@@ -73,46 +79,56 @@ export default function Inspector({
         )}
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-amber-300">Save to library</h2>
-        <input
-          className="w-full border border-amber-700 bg-transparent px-2 py-1 placeholder:text-amber-900"
-          placeholder="Part name"
-          value={nameDraft}
-          onChange={(e) => onNameDraft(e.target.value)}
-        />
-        <button className={`${buttonClass} block w-full`} disabled={circuit.parts.length === 0} onClick={onSave}>
-          Save as part
-        </button>
-        {status && <p className="text-xs">{status}</p>}
-      </section>
+      {allowSave && (
+        <section data-tutorial="save" className="space-y-2">
+          <h2 className="text-amber-300">Save to library</h2>
+          <input
+            className="w-full border border-amber-700 bg-transparent px-2 py-1 placeholder:text-amber-900"
+            placeholder="Part name"
+            value={nameDraft}
+            onChange={(e) => onNameDraft(e.target.value)}
+          />
+          <button
+            className={`${buttonClass} block w-full`}
+            disabled={circuit.parts.length === 0}
+            onClick={onSave}
+          >
+            Save as part
+          </button>
+          {status && <p className="text-xs">{status}</p>}
+        </section>
+      )}
 
-      <section className="space-y-2">
-        <h2 className="text-amber-300">Library</h2>
-        {designs.length === 0 && <p className="text-xs">Saved parts appear here and in the Built list.</p>}
-        {designs.map((design) => (
-          <div key={design.id} className="space-y-1 border border-amber-800 p-2">
-            <p className="truncate text-xs" title={design.name}>
-              {design.name}
-            </p>
-            <p className="text-[10px] text-amber-700">
-              {design.circuit.parts.length} part{design.circuit.parts.length === 1 ? '' : 's'}
-            </p>
-            <div className="flex gap-1">
-              <button className={`${buttonClass} flex-1`} onClick={() => onLoadDesign(design.id)}>
-                Load
-              </button>
-              <button className={`${buttonClass} flex-1`} onClick={() => onDeleteDesign(design.id)}>
-                Delete
-              </button>
+      {allowLibrary && (
+        <section data-tutorial="library" className="space-y-2">
+          <h2 className="text-amber-300">Library</h2>
+          {designs.length === 0 && <p className="text-xs">Saved parts appear here and in the Built list.</p>}
+          {designs.map((design) => (
+            <div key={design.id} className="space-y-1 border border-amber-800 p-2">
+              <p className="truncate text-xs" title={design.name}>
+                {design.name}
+              </p>
+              <p className="text-[10px] text-amber-700">
+                {design.circuit.parts.length} part{design.circuit.parts.length === 1 ? '' : 's'}
+              </p>
+              <div className="flex gap-1">
+                <button className={`${buttonClass} flex-1`} onClick={() => onLoadDesign(design.id)}>
+                  Load
+                </button>
+                <button className={`${buttonClass} flex-1`} onClick={() => onDeleteDesign(design.id)}>
+                  Delete
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </section>
+          ))}
+        </section>
+      )}
 
-      <button className={`${buttonClass} block w-full`} onClick={onClear}>
-        Clear canvas
-      </button>
+      {allowClear && (
+        <button data-tutorial="clear" className={`${buttonClass} block w-full`} onClick={onClear}>
+          Clear canvas
+        </button>
+      )}
     </aside>
   )
 }

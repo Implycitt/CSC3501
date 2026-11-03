@@ -17,11 +17,20 @@ export interface TutorialStep {
   done?: (context: TutorialContext) => boolean
 }
 
+export interface TutorialFeatures {
+  addPorts: boolean
+  saveDesign: boolean
+  library: boolean
+  clearCanvas: boolean
+  componentDocs: boolean
+}
+
 export interface TutorialSection {
   id: string
   title: string
   summary: string
   components?: string[]
+  features?: Partial<TutorialFeatures>
   start: Circuit
   steps: TutorialStep[]
 }

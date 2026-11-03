@@ -18,16 +18,20 @@ interface PaletteProps {
   onAddInput: () => void
   onAddOutput: () => void
   onAddClock: () => void
+  allowPorts: boolean
+  allowDocs: boolean
 }
 
 function PaletteItem({
   part,
   onStartPart,
   onShowDoc,
+  allowDocs,
 }: {
   part: ComponentDef
   onStartPart: PaletteProps['onStartPart']
   onShowDoc: PaletteProps['onShowDoc']
+  allowDocs: boolean
 }) {
   return (
     <div
@@ -36,16 +40,18 @@ function PaletteItem({
       className="flex cursor-grab items-center justify-between gap-1 border border-amber-700 px-2 py-1 hover:border-amber-400"
     >
       <span className="truncate">{part.name}</span>
-      <button
-        type="button"
-        aria-label={`About ${part.name}`}
-        title={`About ${part.name}`}
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => onShowDoc(part.id)}
-        className="shrink-0 px-1 text-amber-700 hover:text-amber-300"
-      >
-        ?
-      </button>
+      {allowDocs && (
+        <button
+          type="button"
+          aria-label={`About ${part.name}`}
+          title={`About ${part.name}`}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => onShowDoc(part.id)}
+          className="shrink-0 px-1 text-amber-700 hover:text-amber-300"
+        >
+          ?
+        </button>
+      )}
     </div>
   )
 }
@@ -58,6 +64,8 @@ export default function Palette({
   onAddInput,
   onAddOutput,
   onAddClock,
+  allowPorts,
+  allowDocs,
 }: PaletteProps) {
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()
@@ -82,7 +90,13 @@ export default function Palette({
             <section key={group.category} className="space-y-1">
               <h2 className="text-amber-300">{group.label}</h2>
               {groupParts.map((part) => (
-                <PaletteItem key={part.id} part={part} onStartPart={onStartPart} onShowDoc={onShowDoc} />
+                <PaletteItem
+                  key={part.id}
+                  part={part}
+                  onStartPart={onStartPart}
+                  onShowDoc={onShowDoc}
+                  allowDocs={allowDocs}
+                />
               ))}
             </section>
           )
@@ -93,24 +107,32 @@ export default function Palette({
             <h2 className="text-amber-300">Built</h2>
             {builtMatches.length === 0 && <p className="text-xs">None yet.</p>}
             {builtMatches.map((part) => (
-              <PaletteItem key={part.id} part={part} onStartPart={onStartPart} onShowDoc={onShowDoc} />
+              <PaletteItem
+                key={part.id}
+                part={part}
+                onStartPart={onStartPart}
+                onShowDoc={onShowDoc}
+                allowDocs={allowDocs}
+              />
             ))}
           </section>
         )}
       </div>
 
-      <section data-tutorial="ports" className="shrink-0 space-y-1 border-t border-amber-800 pt-3">
-        <h2 className="text-amber-300">Ports</h2>
-        <button className={`${buttonClass} block w-full`} onClick={onAddInput}>
-          Add input
-        </button>
-        <button className={`${buttonClass} block w-full`} onClick={onAddOutput}>
-          Add output
-        </button>
-        <button className={`${buttonClass} block w-full`} onClick={onAddClock}>
-          Add clock
-        </button>
-      </section>
+      {allowPorts && (
+        <section data-tutorial="ports" className="shrink-0 space-y-1 border-t border-amber-800 pt-3">
+          <h2 className="text-amber-300">Ports</h2>
+          <button className={`${buttonClass} block w-full`} onClick={onAddInput}>
+            Add input
+          </button>
+          <button className={`${buttonClass} block w-full`} onClick={onAddOutput}>
+            Add output
+          </button>
+          <button className={`${buttonClass} block w-full`} onClick={onAddClock}>
+            Add clock
+          </button>
+        </section>
+      )}
     </aside>
   )
 }
