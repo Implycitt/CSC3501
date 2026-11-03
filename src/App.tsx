@@ -1,13 +1,8 @@
 import './App.css'
-
-import Terminal from './components/Terminal.tsx'
+import UiSection from './sections/ui/UiSection.tsx'
 
 function App() {
-  return (
-    <div>
-      <Terminal/>
-    </div>
-  )
+  return <UiSection />
 }
 
 export default App
