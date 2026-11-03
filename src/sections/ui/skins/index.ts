@@ -80,6 +80,6 @@ export function skinFor(componentId: string): PartSkin {
   return { accent: category, glyph, image: GLYPH_IMAGES[glyph] }
 }
 
-export { ACCENTS } from './accents.ts'
-export type { AccentStyle } from './accents.ts'
 export type { GlyphName, PartSkin } from './types.ts'
+
+export const accentClass = (category: ComponentCategory): string => `accent-${category}`

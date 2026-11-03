@@ -12,7 +12,6 @@ import Inspector from './Inspector.tsx'
 import ComponentDoc from './ComponentDoc.tsx'
 import TutorialPanel from './TutorialPanel.tsx'
 import TutorialOverlay from './TutorialOverlay.tsx'
-import { buttonClass } from './styles.ts'
 import { TUTORIAL_SECTIONS } from '../../tutorial/index.ts'
 import { loadProgress, nextIncompleteSection, persistProgress } from '../../tutorial/progress.ts'
 import {
@@ -351,13 +350,13 @@ function Build() {
   return (
     <div
       ref={rootRef}
-      className="select-none p-4 font-mono text-mist-300"
+      className="select-none p-4 font-mono ink"
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      <h1 className="mb-1 text-lg text-mist-200">Circuit sandbox</h1>
-      <p className="mb-4 max-w-xl text-xs leading-relaxed text-mist-400">
+      <h1 className="mb-1 text-lg ink-strong">Circuit sandbox</h1>
+      <p className="mb-4 max-w-xl text-xs leading-relaxed ink-soft">
         Drag a part onto the grid, then drag between its ports to wire it. Every part and port node moves by drag. To
         change a connection, click the wire and drag either end somewhere else — dropping it on empty space removes it.
       </p>
@@ -379,12 +378,10 @@ function Build() {
           ref={canvasRef}
           data-tutorial="canvas"
           onPointerDown={() => setSelected(null)}
-          className="relative w-full overflow-hidden border border-mist-800"
+          className="canvas-grid relative w-full overflow-hidden border edge-soft"
           style={{
             maxWidth: CANVAS_W,
             aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
-            backgroundImage: 'radial-gradient(circle, rgb(47 65 80) 1px, transparent 1px)',
-            backgroundSize: '20px 20px',
           }}
         >
           <div
@@ -487,7 +484,7 @@ function Build() {
 
       {!activeSection && resumeSection && (
         <button
-          className={`${buttonClass} fixed bottom-4 right-4 z-40`}
+          className={`btn fixed bottom-4 right-4 z-40`}
           onClick={() => resumeTutorial(resumeSection.id)}
         >
           Resume tutorial: {resumeSection.title}
@@ -498,7 +495,7 @@ function Build() {
 
       {drag?.kind === 'palette' && (
         <div
-          className="pointer-events-none fixed border border-signal/60 bg-void px-2 py-1 text-xs"
+          className="pointer-events-none fixed border dot-edge surface-deep px-2 py-1 text-xs"
           style={{ left: drag.x + 12, top: drag.y + 12 }}
         >
           {getComponent(drag.componentId)?.name}

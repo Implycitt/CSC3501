@@ -1,4 +1,3 @@
-import './App.css'
 import UiSection from './sections/ui/UiSection.tsx'
 
 function App() {

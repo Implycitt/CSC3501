@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { getComponent, resolveForSim } from '../../game/registry.ts'
 import type { ComponentCategory } from '../../game/types.ts'
 import PartGlyph from './skins/PartGlyph.tsx'
-import { ACCENTS, skinFor } from './skins/index.ts'
+import { accentClass, skinFor } from './skins/index.ts'
 
 const CATEGORY_LABELS: Record<ComponentCategory, string> = {
   logic: 'Logic gate',
@@ -40,11 +40,11 @@ export default function ComponentDoc({ componentId, onClose }: ComponentDocProps
   if (!part) return null
 
   const skin = skinFor(componentId)
-  const accent = ACCENTS[skin.accent]
+  const accent = accentClass(skin.accent)
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center drape p-4"
       role="presentation"
       onClick={onClose}
     >
@@ -52,17 +52,17 @@ export default function ComponentDoc({ componentId, onClose }: ComponentDocProps
         role="dialog"
         aria-modal="true"
         aria-labelledby="component-doc-title"
-        className="max-h-[80vh] w-full max-w-md overflow-y-auto border border-mist-700 bg-void p-4 font-mono text-mist-300"
+        className="max-h-[80vh] w-full max-w-md overflow-y-auto border edge surface-deep p-4 font-mono ink"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="mb-3 flex items-start justify-between gap-3 border-b border-mist-900 pb-2">
+        <div className="mb-3 flex items-start justify-between gap-3 border-b line pb-2">
           <div className="flex items-center gap-2">
-            <PartGlyph glyph={skin.glyph} image={skin.image} className={`h-4 w-7 shrink-0 ${accent.glyph}`} />
+            <PartGlyph glyph={skin.glyph} image={skin.image} className={`accent-ink h-4 w-7 shrink-0 ${accent}`} />
             <div>
-              <h2 id="component-doc-title" className="text-base text-mist-200">
+              <h2 id="component-doc-title" className="text-base ink-strong">
                 {part.name}
               </h2>
-              <p className="text-[10px] uppercase tracking-widest text-mist-600">{CATEGORY_LABELS[part.category]}</p>
+              <p className="text-[10px] uppercase tracking-widest ink-faint">{CATEGORY_LABELS[part.category]}</p>
             </div>
           </div>
           <button
@@ -70,22 +70,22 @@ export default function ComponentDoc({ componentId, onClose }: ComponentDocProps
             aria-label="Close documentation"
             title="Close"
             onClick={onClose}
-            className="shrink-0 border border-mist-700 px-2 py-0.5 text-xs hover:border-signal"
+            className="shrink-0 border edge px-2 py-0.5 text-xs edge-hover"
           >
             ×
           </button>
         </div>
 
         <section className="space-y-2">
-          <h3 className="text-xs text-mist-200">What it does</h3>
-          <p className="text-xs leading-relaxed text-mist-400">{part.description}</p>
+          <h3 className="text-xs ink-strong">What it does</h3>
+          <p className="text-xs leading-relaxed ink-soft">{part.description}</p>
         </section>
 
         <section className="mt-4 grid grid-cols-2 gap-3">
           <div>
-            <h3 className="mb-1 text-xs text-mist-200">Inputs</h3>
+            <h3 className="mb-1 text-xs ink-strong">Inputs</h3>
             {ports && ports.inputs.length > 0 ? (
-              <ul className="space-y-0.5 text-xs text-mist-400">
+              <ul className="space-y-0.5 text-xs ink-soft">
                 {ports.inputs.map((port) => (
                   <li key={port} className="truncate">
                     {port}
@@ -93,14 +93,14 @@ export default function ComponentDoc({ componentId, onClose }: ComponentDocProps
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-mist-600">None</p>
+              <p className="text-xs ink-faint">None</p>
             )}
           </div>
 
           <div>
-            <h3 className="mb-1 text-xs text-mist-200">Outputs</h3>
+            <h3 className="mb-1 text-xs ink-strong">Outputs</h3>
             {ports && ports.outputs.length > 0 ? (
-              <ul className="space-y-0.5 text-xs text-mist-400">
+              <ul className="space-y-0.5 text-xs ink-soft">
                 {ports.outputs.map((port) => (
                   <li key={port} className="truncate">
                     {port}
@@ -108,12 +108,12 @@ export default function ComponentDoc({ componentId, onClose }: ComponentDocProps
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-mist-600">None</p>
+              <p className="text-xs ink-faint">None</p>
             )}
           </div>
         </section>
 
-        <p className="mt-4 border-t border-mist-900 pt-2 text-[10px] text-mist-600">
+        <p className="mt-4 border-t line pt-2 text-[10px] ink-faint">
           Full documentation for this part is coming soon.
         </p>
       </div>

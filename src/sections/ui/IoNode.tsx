@@ -1,7 +1,6 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { IO_H, IO_W, PORT_HIT, type Point } from './geometry.ts'
 import PortDot from './PortDot.tsx'
-import { gripStyle } from './styles.ts'
 
 const bit = (value: boolean | undefined) => (value ? '1' : '0')
 
@@ -36,13 +35,12 @@ export default function IoNode({
     <div
       data-node={key}
       onPointerDown={(e) => onMove(key, e)}
-      className="absolute flex cursor-move items-center border border-mist-700 bg-panel"
+      className="absolute flex cursor-move items-center border edge surface"
       style={{ left: position.x, top: position.y, width: IO_W, height: IO_H }}
     >
       {kind === 'in' && (
         <span
-          className="h-full w-2.5 shrink-0 cursor-move border-r border-mist-900 bg-sunk"
-          style={gripStyle}
+          className="grip h-full w-2.5 shrink-0 cursor-move border-r line surface-sunk"
           title="Drag to move"
         />
       )}
@@ -65,7 +63,7 @@ export default function IoNode({
       )}
 
       <button
-        className="flex h-full w-5 items-center justify-center text-mist-600 hover:text-mist-100"
+        className="flex h-full w-5 items-center justify-center ink-faint hover-ink"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => onRemove(kind, name)}
         title={`Remove this ${kind === 'in' ? 'input' : 'output'}`}
@@ -75,8 +73,7 @@ export default function IoNode({
 
       {kind === 'out' && (
         <span
-          className="h-full w-2.5 shrink-0 cursor-move border-l border-mist-900 bg-sunk"
-          style={gripStyle}
+          className="grip h-full w-2.5 shrink-0 cursor-move border-l line surface-sunk"
           title="Drag to move"
         />
       )}

@@ -46,13 +46,12 @@ export default function TutorialOverlay({ target }: TutorialOverlayProps) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed z-40 border-2 border-signal"
+      className="spotlight pointer-events-none fixed z-40"
       style={{
         left: box.left - 4,
         top: box.top - 4,
         width: box.width + 8,
         height: box.height + 8,
-        boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.55)',
       }}
     />
   )

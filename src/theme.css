@@ -1,0 +1,245 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+
+  --palette-base: #080d12;
+  --palette-surface: #0e161d;
+  --palette-sunk: #18242e;
+  --palette-track: #2a3a46;
+  --palette-veil: rgb(8 13 18 / 0.95);
+  --palette-drape: rgb(8 13 18 / 0.8);
+  --palette-shade: rgb(0 0 0 / 0.55);
+
+  --palette-ink-strong: #cbdae3;
+  --palette-ink: #a4bdcc;
+  --palette-ink-soft: #82a0b2;
+  --palette-ink-dim: #718c9d;
+  --palette-ink-faint: #68869a;
+  --palette-ink-danger: #fda4af;
+
+  --palette-line: #24313c;
+  --palette-edge-soft: #37495a;
+  --palette-edge: #4c6376;
+
+  --palette-live: #6ee7c7;
+  --palette-live-ring: rgb(110 231 199 / 0.6);
+  --palette-live-halo: rgb(110 231 199 / 0.5);
+
+  --palette-grid: #2f4150;
+  --palette-grip: #68869a;
+  --palette-wire-idle: #68869a;
+  --palette-wire-active: #e6eef3;
+
+  --accent-logic: #e0a83c;
+  --accent-logic-ink: #f0cd8a;
+  --accent-logic-band: rgb(224 168 60 / 0.12);
+  --accent-arithmetic: #6fa8cf;
+  --accent-arithmetic-ink: #a9d4ee;
+  --accent-arithmetic-band: rgb(111 168 207 / 0.12);
+  --accent-routing: #9b8bf4;
+  --accent-routing-ink: #c4b5fd;
+  --accent-routing-band: rgb(155 139 244 / 0.12);
+  --accent-memory: #4ade9b;
+  --accent-memory-ink: #86efac;
+  --accent-memory-band: rgb(74 222 155 / 0.12);
+  --accent-historical: #e8899b;
+  --accent-historical-ink: #f4aab8;
+  --accent-historical-band: rgb(232 137 155 / 0.12);
+  --accent-custom: #4dc9c0;
+  --accent-custom-ink: #8fe3dc;
+  --accent-custom-band: rgb(77 201 192 / 0.12);
+}
+
+:root {
+  background-color: var(--palette-base);
+  color: var(--palette-ink);
+}
+
+@layer components {
+  .surface-deep {
+    background-color: var(--palette-base);
+  }
+
+  .surface {
+    background-color: var(--palette-surface);
+  }
+
+  .surface-sunk {
+    background-color: var(--palette-sunk);
+  }
+
+  .surface-track {
+    background-color: var(--palette-track);
+  }
+
+  .veil {
+    background-color: var(--palette-veil);
+  }
+
+  .drape {
+    background-color: var(--palette-drape);
+  }
+
+  .ink-strong {
+    color: var(--palette-ink-strong);
+  }
+
+  .ink {
+    color: var(--palette-ink);
+  }
+
+  .ink-soft {
+    color: var(--palette-ink-soft);
+  }
+
+  .ink-dim {
+    color: var(--palette-ink-dim);
+  }
+
+  .ink-faint {
+    color: var(--palette-ink-faint);
+  }
+
+  .ink-danger {
+    color: var(--palette-ink-danger);
+  }
+
+  .placeholder-faint::placeholder {
+    color: var(--palette-ink-faint);
+  }
+
+  .hover-ink:hover {
+    color: var(--palette-ink-strong);
+  }
+
+  .line {
+    border-color: var(--palette-line);
+  }
+
+  .edge-soft {
+    border-color: var(--palette-edge-soft);
+  }
+
+  .edge {
+    border-color: var(--palette-edge);
+  }
+
+  .edge-hover:hover {
+    border-color: var(--palette-live);
+  }
+
+  .edge-focus:focus {
+    border-color: var(--palette-live);
+  }
+
+  .dot-edge {
+    border-color: var(--palette-live-ring);
+  }
+
+  .live-fill {
+    background-color: var(--palette-live);
+  }
+
+  .port-dot {
+    border-color: var(--palette-live-ring);
+  }
+
+  .group:hover .port-dot {
+    box-shadow: 0 0 0 2px var(--palette-live-halo);
+  }
+
+  .wire-live {
+    stroke: var(--palette-live);
+  }
+
+  .wire-idle {
+    stroke: var(--palette-wire-idle);
+  }
+
+  .wire-active {
+    stroke: var(--palette-wire-active);
+  }
+
+  .grip-core {
+    fill: var(--palette-base);
+  }
+
+  .canvas-grid {
+    background-image: radial-gradient(circle, var(--palette-grid) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .grip {
+    background-image: radial-gradient(circle, var(--palette-grip) 1px, transparent 1px);
+    background-size: 4px 4px;
+    background-position: center;
+  }
+
+  .btn {
+    border: 1px solid var(--palette-edge);
+    padding: 0.25rem 0.5rem;
+    text-align: left;
+  }
+
+  .btn:hover {
+    border-color: var(--palette-live);
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+  }
+
+  .spotlight {
+    border: 2px solid var(--palette-live);
+    box-shadow: 0 0 0 9999px var(--palette-shade);
+  }
+
+  .part-card {
+    border-color: var(--accent, var(--palette-edge));
+  }
+
+  .part-head {
+    background-color: var(--accent-band, transparent);
+  }
+
+  .accent-ink {
+    color: var(--accent-ink, var(--palette-ink));
+  }
+
+  .accent-logic {
+    --accent: var(--accent-logic);
+    --accent-ink: var(--accent-logic-ink);
+    --accent-band: var(--accent-logic-band);
+  }
+
+  .accent-arithmetic {
+    --accent: var(--accent-arithmetic);
+    --accent-ink: var(--accent-arithmetic-ink);
+    --accent-band: var(--accent-arithmetic-band);
+  }
+
+  .accent-routing {
+    --accent: var(--accent-routing);
+    --accent-ink: var(--accent-routing-ink);
+    --accent-band: var(--accent-routing-band);
+  }
+
+  .accent-memory {
+    --accent: var(--accent-memory);
+    --accent-ink: var(--accent-memory-ink);
+    --accent-band: var(--accent-memory-band);
+  }
+
+  .accent-historical {
+    --accent: var(--accent-historical);
+    --accent-ink: var(--accent-historical-ink);
+    --accent-band: var(--accent-historical-band);
+  }
+
+  .accent-custom {
+    --accent: var(--accent-custom);
+    --accent-ink: var(--accent-custom-ink);
+    --accent-band: var(--accent-custom-band);
+  }
+}

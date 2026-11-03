@@ -1,7 +1,6 @@
 import { type Circuit, type Wire } from '../../game/circuit.ts'
 import { getComponent } from '../../game/registry.ts'
 import type { SavedDesign } from '../../game/library.ts'
-import { buttonClass } from './styles.ts'
 
 function endpointLabel(circuit: Circuit, key: string): string {
   if (key.startsWith('in:')) return key.slice(3)
@@ -52,10 +51,10 @@ export default function Inspector({
   return (
     <aside data-tutorial="inspector" className="space-y-4 md:col-span-2 lg:col-span-1">
       <section data-tutorial="simulation" className="space-y-2">
-        <h2 className="text-mist-200">Simulation</h2>
-        {error && <p className="text-rose-300">{error}</p>}
+        <h2 className="ink-strong">Simulation</h2>
+        {error && <p className="ink-danger">{error}</p>}
         {circuit.inputs.includes('clk') && (
-          <button className={`${buttonClass} block w-full`} onClick={onTick}>
+          <button className={`btn block w-full`} onClick={onTick}>
             Tick clock
           </button>
         )}
@@ -63,14 +62,14 @@ export default function Inspector({
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-mist-200">Selected wire</h2>
+        <h2 className="ink-strong">Selected wire</h2>
         {selected ? (
           <>
             <p className="text-xs">
               {endpointLabel(circuit, selected.from)} → {endpointLabel(circuit, selected.to)}
             </p>
-            <p className="text-xs text-mist-500">Drag either end to re-route.</p>
-            <button className={`${buttonClass} block w-full`} onClick={() => onRemoveWire(selected)}>
+            <p className="text-xs ink-dim">Drag either end to re-route.</p>
+            <button className={`btn block w-full`} onClick={() => onRemoveWire(selected)}>
               Remove wire
             </button>
           </>
@@ -81,15 +80,15 @@ export default function Inspector({
 
       {allowSave && (
         <section data-tutorial="save" className="space-y-2">
-          <h2 className="text-mist-200">Save to library</h2>
+          <h2 className="ink-strong">Save to library</h2>
           <input
-            className="w-full border border-mist-700 bg-transparent px-2 py-1 placeholder:text-mist-600"
+            className="w-full border edge bg-transparent px-2 py-1 placeholder-faint"
             placeholder="Part name"
             value={nameDraft}
             onChange={(e) => onNameDraft(e.target.value)}
           />
           <button
-            className={`${buttonClass} block w-full`}
+            className={`btn block w-full`}
             disabled={circuit.parts.length === 0}
             onClick={onSave}
           >
@@ -101,21 +100,21 @@ export default function Inspector({
 
       {allowLibrary && (
         <section data-tutorial="library" className="space-y-2">
-          <h2 className="text-mist-200">Library</h2>
+          <h2 className="ink-strong">Library</h2>
           {designs.length === 0 && <p className="text-xs">Saved parts appear here and in the Built list.</p>}
           {designs.map((design) => (
-            <div key={design.id} className="space-y-1 border border-mist-900 p-2">
+            <div key={design.id} className="space-y-1 border line p-2">
               <p className="truncate text-xs" title={design.name}>
                 {design.name}
               </p>
-              <p className="text-[10px] text-mist-600">
+              <p className="text-[10px] ink-faint">
                 {design.circuit.parts.length} part{design.circuit.parts.length === 1 ? '' : 's'}
               </p>
               <div className="flex gap-1">
-                <button className={`${buttonClass} flex-1`} onClick={() => onLoadDesign(design.id)}>
+                <button className={`btn flex-1`} onClick={() => onLoadDesign(design.id)}>
                   Load
                 </button>
-                <button className={`${buttonClass} flex-1`} onClick={() => onDeleteDesign(design.id)}>
+                <button className={`btn flex-1`} onClick={() => onDeleteDesign(design.id)}>
                   Delete
                 </button>
               </div>
@@ -125,7 +124,7 @@ export default function Inspector({
       )}
 
       {allowClear && (
-        <button data-tutorial="clear" className={`${buttonClass} block w-full`} onClick={onClear}>
+        <button data-tutorial="clear" className={`btn block w-full`} onClick={onClear}>
           Clear canvas
         </button>
       )}
