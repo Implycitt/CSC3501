@@ -98,7 +98,7 @@ export default function Palette({
         {(builtMatches.length > 0 || needle === '') && (
           <section className="space-y-1">
             <h2 className={ACCENTS.custom.glyph}>Built</h2>
-            {builtMatches.length === 0 && <p className="text-xs">None yet.</p>}
+            {builtMatches.length === 0 && <p className="text-xs">Nothing saved yet.</p>}
             {builtMatches.map((part) => (
               <PaletteItem key={part.id} part={part} onStartPart={onStartPart} onShowDoc={onShowDoc} />
             ))}

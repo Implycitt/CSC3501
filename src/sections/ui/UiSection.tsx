@@ -28,6 +28,7 @@ function Build() {
   const [docId, setDocId] = useState<string | null>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
   const [selected, setSelected] = useState<Wire | null>(null)
+  const [selectedPart, setSelectedPart] = useState<string | null>(null)
   const [nameDraft, setNameDraft] = useState('')
   const [status, setStatus] = useState('')
   const [scale, setScale] = useState(1)
@@ -69,6 +70,8 @@ function Build() {
 
     capture(e)
     const point = canvasPoint(e.clientX, e.clientY)
+    setSelected(null)
+    setSelectedPart(uid)
     setDrag({ kind: 'part', uid, offsetX: point.x - part.x, offsetY: point.y - part.y })
 
     if (circuit.parts[circuit.parts.length - 1]?.uid !== uid) {
@@ -222,6 +225,7 @@ function Build() {
   const removePart = (uid: string) => {
     const prefix = `part:${uid}:`
     setSelected(null)
+    setSelectedPart(null)
     commit({
       ...circuit,
       parts: circuit.parts.filter((part) => part.uid !== uid),
@@ -245,7 +249,7 @@ function Build() {
     if (!design) return
 
     setDesigns(loadDesigns())
-    setStatus(`Saved ${design.name}. It is now in the Built list.`)
+    setStatus(`Saved ${design.name}. You can find it under Built.`)
     setNameDraft('')
     setSelected(null)
   }
@@ -264,13 +268,13 @@ function Build() {
     if (!design) return
 
     if (circuit.parts.some((part) => part.componentId === builtId(id))) {
-      setStatus(`Remove ${design.name} from the canvas before deleting it.`)
+      setStatus(`Take ${design.name} off the canvas before deleting it.`)
       return
     }
 
     const dependents = designsUsing(designs, id)
     if (dependents.length > 0) {
-      setStatus(`${design.name} is used by ${dependents.map((dependent) => dependent.name).join(', ')}.`)
+      setStatus(`${design.name} is still used by ${dependents.map((dependent) => dependent.name).join(', ')}.`)
       return
     }
 
@@ -278,7 +282,37 @@ function Build() {
     setStatus(`Deleted ${design.name}.`)
   }
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelected(null)
+        setSelectedPart(null)
+        return
+      }
+
+      if (event.key !== 'Delete' && event.key !== 'Backspace') return
+
+      const target = event.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return
+
+      if (selectedPart) {
+        event.preventDefault()
+        removePart(selectedPart)
+        return
+      }
+
+      if (selected) {
+        event.preventDefault()
+        removeWire(selected)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  })
+
   const parts = allComponents()
+  const selectedPartDef = circuit.parts.find((part) => part.uid === selectedPart)
   const baseParts = parts.filter((component) => component.category !== 'custom')
   const builtParts = parts.filter((component) => component.category === 'custom')
   const ghostAnchor = drag?.kind === 'wire' ? anchorOf(circuit, drag.from) : undefined
@@ -294,8 +328,9 @@ function Build() {
     >
       <h1 className="mb-1 text-lg text-amber-300">Circuit sandbox</h1>
       <p className="mb-4 max-w-xl text-xs leading-relaxed text-amber-500">
-        Drag a part onto the grid, then drag between its ports to wire it. Every part and port node moves by drag. To
-        change a connection, click the wire and drag either end somewhere else — dropping it on empty space removes it.
+        Drag a part onto the grid, then drag from one port to another to wire them together. Parts and inputs can both
+        be moved by dragging. To change a connection, click the wire and drag one end somewhere else. Drop a wire on
+        empty space and it is removed. Click a part and press Delete to take it off the canvas.
       </p>
 
       <div className="grid items-start gap-4 md:grid-cols-[180px_minmax(0,1fr)] lg:grid-cols-[180px_minmax(0,1fr)_220px]">
@@ -311,7 +346,11 @@ function Build() {
 
         <div
           ref={canvasRef}
-          onPointerDown={() => setSelected(null)}
+          onPointerDown={(e) => {
+            if ((e.target as HTMLElement).closest('[data-part]')) return
+            setSelected(null)
+            setSelectedPart(null)
+          }}
           className="relative w-full overflow-hidden border border-amber-800"
           style={{
             maxWidth: CANVAS_W,
@@ -377,6 +416,7 @@ function Build() {
                 part={part}
                 wires={circuit.wires}
                 nets={sim.nets}
+                selected={part.uid === selectedPart}
                 onMove={startPart}
                 onWire={startWire}
                 onRemove={removePart}
@@ -394,6 +434,8 @@ function Build() {
           designs={designs}
           onTick={clockTick}
           onRemoveWire={removeWire}
+          selectedPart={selectedPartDef ? { name: getComponent(selectedPartDef.componentId)?.name ?? selectedPartDef.componentId } : null}
+          onRemoveSelectedPart={() => selectedPart && removePart(selectedPart)}
           onNameDraft={setNameDraft}
           onSave={saveBuilt}
           onLoadDesign={loadSaved}

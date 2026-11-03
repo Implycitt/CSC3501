@@ -19,7 +19,7 @@ function PartPort({ portKey, label, side, lit, onWire }: PartPortProps) {
     <>
       <div
         data-port={portKey}
-        title={`${label} — drag to wire`}
+        title={`${label}: drag to wire`}
         onPointerDown={(e) => {
           e.stopPropagation()
           onWire(portKey, e)
@@ -44,6 +44,7 @@ function PartPort({ portKey, label, side, lit, onWire }: PartPortProps) {
 
 interface PartShapeProps {
   part: PlacedPart
+  selected: boolean
   wires: Wire[]
   nets: Map<string, boolean>
   onMove: (uid: string, e: ReactPointerEvent) => void
@@ -51,7 +52,7 @@ interface PartShapeProps {
   onRemove: (uid: string) => void
 }
 
-export default function PartShape({ part, wires, nets, onMove, onWire, onRemove }: PartShapeProps) {
+export default function PartShape({ part, selected, wires, nets, onMove, onWire, onRemove }: PartShapeProps) {
   const ports = portsOf(part.componentId)
   const rows = rowCount(part.componentId)
   const isHigh = (net: string) => nets.get(net) === true
@@ -62,7 +63,7 @@ export default function PartShape({ part, wires, nets, onMove, onWire, onRemove 
     <div
       data-part={part.uid}
       onPointerDown={(e) => onMove(part.uid, e)}
-      className={`absolute cursor-grab active:cursor-grabbing border bg-black ${accent.border}`}
+      className={`absolute cursor-grab border bg-black active:cursor-grabbing ${accent.border} ${selected ? 'ring-1 ring-amber-300' : ''}`}
       style={{ left: part.x, top: part.y, width: PART_W, height: partHeight(part.componentId) }}
     >
       <div
@@ -74,10 +75,11 @@ export default function PartShape({ part, wires, nets, onMove, onWire, onRemove 
           {getComponent(part.componentId)?.name ?? part.componentId}
         </span>
         <button
-          className="ml-auto flex h-full w-5 shrink-0 items-center justify-center text-amber-700 hover:text-amber-300"
+          className="ml-auto flex h-full w-6 shrink-0 items-center justify-center border-l border-amber-800/60 text-sm text-amber-600 hover:bg-amber-900/60 hover:text-amber-100"
+          aria-label={`Remove ${getComponent(part.componentId)?.name ?? part.componentId}`}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => onRemove(part.uid)}
-          title="Remove this part"
+          title="Remove this part (Delete)"
         >
           ×
         </button>
