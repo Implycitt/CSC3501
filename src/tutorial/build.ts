@@ -127,6 +127,11 @@ export const portDriven = (componentId: string, port: string) => {
     })
 }
 
+/** Combines step predicates into one that only passes when all of them do. */
+export const allOf = (...predicates: ((context: TutorialContext) => boolean)[]) => {
+  return (context: TutorialContext): boolean => predicates.every((predicate) => predicate(context))
+}
+
 /** True once a wire drives the named output. */
 export const outputDriven = (name: string) => {
   return (context: TutorialContext): boolean => context.circuit.wires.some((wire) => wire.to === `out:${name}`)
