@@ -7,4 +7,8 @@ export const ARITHMETIC_COMPONENTS: ComponentDef[] = [
   { id: 'full-subtractor', name: 'Full Subtractor', category: 'arithmetic', description: 'Subtracts two bits plus a borrow-in into a difference and borrow-out.' },
   { id: 'adder2', name: '2-bit Adder', category: 'arithmetic', description: 'Adds two 2-bit values with a carry-in.' },
   { id: 'adder4', name: '4-bit Adder', category: 'arithmetic', description: 'Adds two 4-bit values with a carry-in.' },
+  { id: 'adder8', name: '8-bit Adder', category: 'arithmetic', description: 'Adds two 8-bit values with a carry-in.' },
+  { id: 'multiplier4', name: '4-bit Multiplier', category: 'arithmetic', description: 'Multiplies two 4-bit values into an 8-bit product.' },
+  { id: 'comparator4', name: '4-bit Comparator', category: 'arithmetic', description: 'Reports whether two 4-bit values are equal, or which is larger.' },
+  { id: 'alu8', name: '8-bit ALU', category: 'arithmetic', description: 'Adds, subtracts, ANDs, ORs, XORs, inverts, or shifts based on three op bits.' },
 ]
