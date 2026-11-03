@@ -7,6 +7,7 @@ export interface TutorialSession {
   sectionId: string | null
   stepIndex: number
   ticks: number
+  paused: boolean
 }
 
 let nextCircuitPart = 1
@@ -21,6 +22,7 @@ export function startSession(sections: readonly TutorialSection[], progress: Tut
     sectionId: section?.id ?? null,
     stepIndex: section ? firstIncompleteStep(section, progress) : 0,
     ticks: 0,
+    paused: false,
   }
 }
 
@@ -38,6 +40,7 @@ function completeStep(section: TutorialSection, session: TutorialSession, stepId
     sectionId: finished ? null : section.id,
     stepIndex: finished ? 0 : session.stepIndex + 1,
     ticks: session.ticks,
+    paused: false,
   }
 }
 
@@ -48,15 +51,21 @@ export function settleSession(
   nets: ReadonlyMap<string, boolean>,
   ticks: number = session.ticks,
 ): TutorialSession {
+  if (session.paused) return session
+
   const section = findSection(sections, session.sectionId)
-  const step = section?.steps[session.stepIndex]
+  if (!section) return session
+
+  const step = section.steps[session.stepIndex]
   const current = ticks === session.ticks ? session : { ...session, ticks }
-  if (!section || !step?.done || !step.done({ circuit, nets, ticks })) return current
+  if (!step?.done || !step.done({ circuit, nets, ticks })) return current
 
   return completeStep(section, current, step.id)
 }
 
 export function advanceSession(sections: readonly TutorialSection[], session: TutorialSession): TutorialSession {
+  if (session.paused) return session
+
   const section = findSection(sections, session.sectionId)
   const step = section?.steps[session.stepIndex]
   if (!section || !step) return session
@@ -69,7 +78,7 @@ export function retreatSession(session: TutorialSession): TutorialSession {
 }
 
 export function closeSession(session: TutorialSession): TutorialSession {
-  return { ...session, sectionId: null }
+  return { ...session, paused: session.sectionId !== null }
 }
 
 export function resumeSession(
@@ -79,6 +88,13 @@ export function resumeSession(
 ): TutorialSession {
   const section = findSection(sections, sectionId)
   if (!section) return session
+  if (session.paused && session.sectionId === sectionId) return { ...session, paused: false }
 
-  return { ...session, sectionId, stepIndex: firstIncompleteStep(section, session.progress), ticks: 0 }
+  return {
+    ...session,
+    sectionId,
+    stepIndex: firstIncompleteStep(section, session.progress),
+    ticks: 0,
+    paused: false,
+  }
 }
