@@ -385,16 +385,15 @@ function Build() {
   return (
     <div
       ref={rootRef}
-      className="select-none p-4 font-mono text-amber-400"
+      className="select-none p-4 font-mono text-mist-300"
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      <h1 className="mb-1 text-lg text-amber-300">Circuit sandbox</h1>
-      <p className="mb-4 max-w-xl text-xs leading-relaxed text-amber-500">
-        Drag a part onto the grid, then drag from one port to another to wire them together. Parts and inputs can both
-        be moved by dragging. To change a connection, click the wire and drag one end somewhere else. Drop a wire on
-        empty space and it is removed. Click a part and press Delete to take it off the canvas.
+      <h1 className="mb-1 text-lg text-mist-200">Circuit sandbox</h1>
+      <p className="mb-4 max-w-xl text-xs leading-relaxed text-mist-400">
+        Drag a part onto the grid, then drag between its ports to wire it. Every part and port node moves by drag. To
+        change a connection, click the wire and drag either end somewhere else — dropping it on empty space removes it.
       </p>
 
       <div className="grid items-start gap-4 md:grid-cols-[180px_minmax(0,1fr)] lg:grid-cols-[180px_minmax(0,1fr)_220px]">
@@ -413,16 +412,12 @@ function Build() {
         <div
           ref={canvasRef}
           data-tutorial="canvas"
-          onPointerDown={(e) => {
-            if ((e.target as HTMLElement).closest('[data-part]')) return
-            setSelected(null)
-            setSelectedPart(null)
-          }}          
-          className="relative w-full overflow-hidden border border-amber-800"
+          onPointerDown={() => setSelected(null)}
+          className="relative w-full overflow-hidden border border-mist-800"
           style={{
             maxWidth: CANVAS_W,
             aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
-            backgroundImage: 'radial-gradient(circle, rgb(120 53 15) 1px, transparent 1px)',
+            backgroundImage: 'radial-gradient(circle, rgb(47 65 80) 1px, transparent 1px)',
             backgroundSize: '20px 20px',
           }}
         >
@@ -540,7 +535,7 @@ function Build() {
 
       {drag?.kind === 'palette' && (
         <div
-          className="pointer-events-none fixed border border-amber-400 bg-black px-2 py-1 text-xs"
+          className="pointer-events-none fixed border border-signal/60 bg-void px-2 py-1 text-xs"
           style={{ left: drag.x + 12, top: drag.y + 12 }}
         >
           {getComponent(drag.componentId)?.name}

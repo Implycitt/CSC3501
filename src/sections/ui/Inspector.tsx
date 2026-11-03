@@ -56,8 +56,8 @@ export default function Inspector({
   return (
     <aside data-tutorial="inspector" className="space-y-4 md:col-span-2 lg:col-span-1">
       <section data-tutorial="simulation" className="space-y-2">
-        <h2 className="text-amber-300">Simulation</h2>
-        {error && <p className="text-red-400">{error}</p>}
+        <h2 className="text-mist-200">Simulation</h2>
+        {error && <p className="text-rose-300">{error}</p>}
         {circuit.inputs.includes('clk') && (
           <button className={`${buttonClass} block w-full`} onClick={onTick}>
             Tick clock
@@ -81,13 +81,13 @@ export default function Inspector({
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-amber-300">Selected wire</h2>
+        <h2 className="text-mist-200">Selected wire</h2>
         {selected ? (
           <>
             <p className="text-xs">
               {endpointLabel(circuit, selected.from)} → {endpointLabel(circuit, selected.to)}
             </p>
-            <p className="text-xs text-amber-600">Drag either end to move the connection.</p>
+            <p className="text-xs text-mist-500">Drag either end to re-route.</p>
             <button className={`${buttonClass} block w-full`} onClick={() => onRemoveWire(selected)}>
               Remove wire
             </button>
@@ -99,9 +99,9 @@ export default function Inspector({
 
       {allowSave && (
         <section data-tutorial="save" className="space-y-2">
-          <h2 className="text-amber-300">Save to library</h2>
+          <h2 className="text-mist-200">Save to library</h2>
           <input
-            className="w-full border border-amber-700 bg-transparent px-2 py-1 placeholder:text-amber-900"
+            className="w-full border border-mist-700 bg-transparent px-2 py-1 placeholder:text-mist-600"
             placeholder="Part name"
             value={nameDraft}
             onChange={(e) => onNameDraft(e.target.value)}
@@ -119,14 +119,14 @@ export default function Inspector({
 
       {allowLibrary && (
         <section data-tutorial="library" className="space-y-2">
-          <h2 className="text-amber-300">Library</h2>
+          <h2 className="text-mist-200">Library</h2>
           {designs.length === 0 && <p className="text-xs">Saved parts appear here and in the Built list.</p>}
           {designs.map((design) => (
-            <div key={design.id} className="space-y-1 border border-amber-800 p-2">
+            <div key={design.id} className="space-y-1 border border-mist-900 p-2">
               <p className="truncate text-xs" title={design.name}>
                 {design.name}
               </p>
-              <p className="text-[10px] text-amber-700">
+              <p className="text-[10px] text-mist-600">
                 {design.circuit.parts.length} part{design.circuit.parts.length === 1 ? '' : 's'}
               </p>
               <div className="flex gap-1">

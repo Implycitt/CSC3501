@@ -35,7 +35,7 @@ function PartPort({ portKey, label, side, lit, onWire }: PartPortProps) {
       >
         <PortDot lit={lit} />
       </div>
-      <span className={`absolute top-1/2 -translate-y-1/2 text-[10px] text-amber-600 ${side === 'left' ? 'left-3' : 'right-3'}`}>
+      <span className={`absolute top-1/2 -translate-y-1/2 text-[10px] text-mist-500 ${side === 'left' ? 'left-3' : 'right-3'}`}>
         {label}
       </span>
     </>
@@ -63,20 +63,13 @@ export default function PartShape({ part, selected, wires, nets, onMove, onWire,
     <div
       data-part={part.uid}
       onPointerDown={(e) => onMove(part.uid, e)}
-      className={`absolute cursor-grab border bg-black active:cursor-grabbing ${accent.border} ${selected ? 'ring-1 ring-amber-300' : ''}`}
+      className="absolute cursor-move border border-mist-700 bg-panel"
       style={{ left: part.x, top: part.y, width: PART_W, height: partHeight(part.componentId) }}
     >
-      <div
-        className={`flex items-center gap-1.5 border-b px-1.5 ${accent.band}`}
-        style={{ height: HEAD_H }}
-      >
-        <PartGlyph glyph={skin.glyph} image={skin.image} className={`h-4 w-7 shrink-0 ${accent.glyph}`} />
-        <span className="truncate text-xs" title={getComponent(part.componentId)?.name ?? part.componentId}>
-          {getComponent(part.componentId)?.name ?? part.componentId}
-        </span>
+      <div className="flex items-center justify-between border-b border-mist-900 px-2" style={{ height: HEAD_H }}>
+        <span className="truncate text-xs">{getComponent(part.componentId)?.name ?? part.componentId}</span>
         <button
-          className="ml-auto flex h-full w-6 shrink-0 items-center justify-center border-l border-amber-800/60 text-sm text-amber-600 hover:bg-amber-900/60 hover:text-amber-100"
-          aria-label={`Remove ${getComponent(part.componentId)?.name ?? part.componentId}`}
+          className="text-mist-600 hover:text-mist-100"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => onRemove(part.uid)}
           title="Remove this part (Delete)"
