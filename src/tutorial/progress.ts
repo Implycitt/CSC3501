@@ -46,7 +46,12 @@ export function parseProgress(raw: string | null): TutorialProgress {
 }
 
 export function loadProgress(storage: StorageLike | undefined = defaultStorage()): TutorialProgress {
-  return parseProgress(storage?.getItem(PROGRESS_KEY) ?? null)
+  if (!storage) return {}
+  try {
+    return parseProgress(storage.getItem(PROGRESS_KEY))
+  } catch {
+    return {}
+  }
 }
 
 export function persistProgress(
