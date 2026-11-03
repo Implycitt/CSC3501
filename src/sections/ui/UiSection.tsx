@@ -14,14 +14,17 @@ import TutorialPanel from './TutorialPanel.tsx'
 import TutorialOverlay from './TutorialOverlay.tsx'
 import { buttonClass } from './styles.ts'
 import { TUTORIAL_SECTIONS } from '../../tutorial/index.ts'
+import { loadProgress, nextIncompleteSection, persistProgress } from '../../tutorial/progress.ts'
 import {
-  firstIncompleteStep,
-  loadProgress,
-  markStepComplete,
-  nextIncompleteSection,
-  persistProgress,
-} from '../../tutorial/progress.ts'
-import type { TutorialProgress } from '../../tutorial/types.ts'
+  advanceSession,
+  closeSession,
+  retreatSession,
+  resumeSession,
+  sectionCircuit,
+  settleSession,
+  startSession,
+  type TutorialSession,
+} from '../../tutorial/session.ts'
 import { featuresFor } from '../../tutorial/features.ts'
 
 type Drag =
@@ -34,30 +37,9 @@ const clamp = (value: number, low: number, high: number) => Math.min(high, Math.
 
 let nextUid = 1
 
-interface TutorialState {
-  progress: TutorialProgress
-  sectionId: string | null
-  stepIndex: number
-}
-
-const startTutorial = (): TutorialState => {
-  const progress = loadProgress()
-  const section = nextIncompleteSection(TUTORIAL_SECTIONS, progress)
-  return {
-    progress,
-    sectionId: section?.id ?? null,
-    stepIndex: section ? firstIncompleteStep(section, progress) : 0,
-  }
-}
-
-const sectionStart = (sectionId: string | null): Circuit => {
-  const section = TUTORIAL_SECTIONS.find((candidate) => candidate.id === sectionId)
-  return section ? rekeyCircuit(section.start, () => `p${nextUid++}`) : EMPTY_CIRCUIT
-}
-
 function Build() {
-  const [tutorial, setTutorial] = useState<TutorialState>(startTutorial)
-  const [circuit, setCircuit] = useState<Circuit>(() => sectionStart(tutorial.sectionId))
+  const [tutorial, setTutorial] = useState<TutorialSession>(() => startSession(TUTORIAL_SECTIONS, loadProgress()))
+  const [circuit, setCircuit] = useState<Circuit>(() => sectionCircuit(TUTORIAL_SECTIONS, tutorial.sectionId))
   const [sim, setSim] = useState<Sim>(() => createSim(circuit))
   const [designs, setDesigns] = useState<SavedDesign[]>(() => loadDesigns())
   const [docId, setDocId] = useState<string | null>(null)
@@ -86,25 +68,15 @@ function Build() {
   const features = featuresFor(activeSection)
   const resumeSection = nextIncompleteSection(TUTORIAL_SECTIONS, tutorial.progress)
 
-  const settleTutorial = (nextCircuit: Circuit, nextSim: Sim) => {
-    if (!activeSection || !activeStep?.done) return
-    if (!activeStep.done({ circuit: nextCircuit, nets: nextSim.nets })) return
+  const applySession = (next: TutorialSession) => {
+    if (next === tutorial) return
 
-    setTutorial((current) => {
-      const section = TUTORIAL_SECTIONS.find((candidate) => candidate.id === current.sectionId)
-      const step = section?.steps[current.stepIndex]
-      if (!section || !step) return current
-
-      const progress = markStepComplete(current.progress, section, step.id)
-      persistProgress(progress)
-      const finished = current.stepIndex + 1 >= section.steps.length
-      return {
-        progress,
-        sectionId: finished ? null : section.id,
-        stepIndex: finished ? 0 : current.stepIndex + 1,
-      }
-    })
+    persistProgress(next.progress)
+    setTutorial(next)
   }
+
+  const settleTutorial = (nextCircuit: Circuit, nextSim: Sim) =>
+    applySession(settleSession(TUTORIAL_SECTIONS, tutorial, nextCircuit, nextSim.nets))
 
   const commit = (next: Circuit) => {
     const nextSim = createSim(next)
@@ -113,40 +85,16 @@ function Build() {
     settleTutorial(next, nextSim)
   }
 
-  const stepForward = () => {
-    if (!activeSection) return
-
-    const step = activeSection.steps[tutorial.stepIndex]
-    if (!step) return
-
-    const progress = markStepComplete(tutorial.progress, activeSection, step.id)
-    persistProgress(progress)
-    const finished = tutorial.stepIndex + 1 >= activeSection.steps.length
-    setTutorial({
-      progress,
-      sectionId: finished ? null : activeSection.id,
-      stepIndex: finished ? 0 : tutorial.stepIndex + 1,
-    })
-  }
-
-  const stepBack = () =>
-    setTutorial((current) => ({ ...current, stepIndex: Math.max(0, current.stepIndex - 1) }))
-
-  const exitTutorial = () => setTutorial((current) => ({ ...current, sectionId: null }))
+  const stepForward = () => applySession(advanceSession(TUTORIAL_SECTIONS, tutorial))
+  const stepBack = () => applySession(retreatSession(tutorial))
+  const exitTutorial = () => applySession(closeSession(tutorial))
 
   const resumeTutorial = (sectionId: string) => {
-    const section = TUTORIAL_SECTIONS.find((candidate) => candidate.id === sectionId)
-    if (!section) return
-
-    const next = sectionStart(sectionId)
+    const next = sectionCircuit(TUTORIAL_SECTIONS, sectionId)
     setSelected(null)
     setCircuit(next)
     setSim(createSim(next))
-    setTutorial((current) => ({
-      ...current,
-      sectionId,
-      stepIndex: firstIncompleteStep(section, current.progress),
-    }))
+    applySession(resumeSession(TUTORIAL_SECTIONS, tutorial, sectionId))
   }
 
   const canvasPoint = (clientX: number, clientY: number) => {
