@@ -11,11 +11,6 @@ interface Box {
   height: number
 }
 
-/**
- * Dims the interface except for the region a tutorial step points at. Regions
- * are found through `data-tutorial` attributes, so sections can highlight any
- * part of the UI without knowing how it is built.
- */
 export default function TutorialOverlay({ target }: TutorialOverlayProps) {
   const [box, setBox] = useState<Box | null>(null)
 

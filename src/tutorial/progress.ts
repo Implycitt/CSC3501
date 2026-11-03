@@ -19,7 +19,6 @@ function defaultStorage(): StorageLike | undefined {
   }
 }
 
-/** Rebuilds progress from untrusted JSON, dropping anything malformed. */
 export function parseProgress(raw: string | null): TutorialProgress {
   if (!raw) return {}
 
@@ -64,7 +63,6 @@ export function isStepComplete(progress: TutorialProgress, sectionId: string, st
   return progress[sectionId]?.completed.includes(stepId) ?? false
 }
 
-/** Returns a new progress object with the step recorded, finishing the section when it was the last one. */
 export function markStepComplete(
   progress: TutorialProgress,
   section: TutorialSection,
@@ -83,7 +81,6 @@ export function markStepComplete(
   }
 }
 
-/** Forgets the section so it can be replayed from the first step. */
 export function resetSection(progress: TutorialProgress, sectionId: string): TutorialProgress {
   const next = { ...progress }
   delete next[sectionId]
@@ -95,14 +92,12 @@ export function isSectionComplete(progress: TutorialProgress, section: TutorialS
   return section.steps.length > 0 && section.steps.every((step) => completed.includes(step.id))
 }
 
-/** Index of the first step the learner has not finished, or the last step of a finished section. */
 export function firstIncompleteStep(section: TutorialSection, progress: TutorialProgress): number {
   const completed = progress[section.id]?.completed ?? []
   const index = section.steps.findIndex((step) => !completed.includes(step.id))
   return index === -1 ? Math.max(0, section.steps.length - 1) : index
 }
 
-/** First section with work left, used to decide what the tutorial resumes into. */
 export function nextIncompleteSection(
   sections: readonly TutorialSection[],
   progress: TutorialProgress,
