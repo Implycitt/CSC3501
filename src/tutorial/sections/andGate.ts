@@ -45,7 +45,7 @@ export const andGateSection: TutorialSection = {
     {
       id: 'both-on',
       title: 'Switch both inputs on',
-      body: 'Click a and b on the canvas. With both inputs on, y lights up. That is what AND means: one only when every input is one.',
+      body: 'Click a and b on the canvas. With both inputs on, y lights up. That is what AND does: the output goes on only when every input is on.',
       hint: 'Turn either input off and y goes dark again.',
       target: target.canvas,
       done: outputHigh('y'),

@@ -20,7 +20,7 @@ export const notGateSection: TutorialSection = {
     {
       id: 'place-not',
       title: 'Place a NOT gate',
-      body: 'This lesson runs with a stripped-down workspace: the only part, one input and one output. Drag NOT Gate onto the grid.',
+      body: 'This lesson keeps things small: one part, one input and one output. Drag NOT Gate onto the grid.',
       hint: 'Everything else in the interface is switched off so there is nothing to undo.',
       target: target.paletteItem('not'),
       done: placed('not'),
@@ -43,7 +43,7 @@ export const notGateSection: TutorialSection = {
       id: 'invert-on',
       title: 'Switch a on',
       body: 'Click a. The gate inverts its input, so y stays dark while a is on.',
-      hint: 'This is the whole job of a NOT gate: output is the opposite of input.',
+      hint: 'That is the whole job of a NOT gate: the output is the opposite of the input.',
       target: target.canvas,
       done: allOf(inputHigh('a'), outputLow('y')),
     },

@@ -46,7 +46,7 @@ export const dFlipFlopSection: TutorialSection = {
     {
       id: 'wire-q',
       title: 'Wire the output',
-      body: 'Connect the q output to the y-style output named q.',
+      body: 'Connect the q output on the flip-flop to the output node named q on the right.',
       target: target.canvas,
       done: outputDriven('q'),
     },
