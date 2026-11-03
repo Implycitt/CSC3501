@@ -40,6 +40,10 @@ export const outputLow = (name: string) => {
   return (context: TutorialContext): boolean => context.nets.get(name) !== true
 }
 
+export const clockTicks = (count: number) => {
+  return (context: TutorialContext): boolean => context.ticks >= count
+}
+
 export const allOf = (...predicates: ((context: TutorialContext) => boolean)[]) => {
   return (context: TutorialContext): boolean => predicates.every((predicate) => predicate(context))
 }

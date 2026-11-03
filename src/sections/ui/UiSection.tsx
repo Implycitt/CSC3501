@@ -76,8 +76,8 @@ function Build() {
     setTutorial(next)
   }
 
-  const settleTutorial = (nextCircuit: Circuit, nextSim: Sim) =>
-    applySession(settleSession(TUTORIAL_SECTIONS, tutorial, nextCircuit, nextSim.nets))
+  const settleTutorial = (nextCircuit: Circuit, nextSim: Sim, ticks: number = tutorial.ticks) =>
+    applySession(settleSession(TUTORIAL_SECTIONS, tutorial, nextCircuit, nextSim.nets, ticks))
 
   const commit = (next: Circuit) => {
     const nextSim = createSim(next)
@@ -292,7 +292,7 @@ function Build() {
   const clockTick = () => {
     const next = advance(sim, sim.values, true)
     setSim(next)
-    settleTutorial(circuit, next)
+    settleTutorial(circuit, next, tutorial.ticks + 1)
   }
 
   const saveBuilt = () => {
