@@ -10,6 +10,18 @@ import WireLayer from './WireLayer.tsx'
 import Palette from './Palette.tsx'
 import Inspector from './Inspector.tsx'
 import ComponentDoc from './ComponentDoc.tsx'
+import TutorialPanel from './TutorialPanel.tsx'
+import TutorialOverlay from './TutorialOverlay.tsx'
+import { buttonClass } from './styles.ts'
+import { TUTORIAL_SECTIONS } from '../../tutorial/index.ts'
+import {
+  firstIncompleteStep,
+  loadProgress,
+  markStepComplete,
+  nextIncompleteSection,
+  persistProgress,
+} from '../../tutorial/progress.ts'
+import type { TutorialProgress } from '../../tutorial/types.ts'
 
 type Drag =
   | { kind: 'palette'; componentId: string; startX: number; startY: number; x: number; y: number }
@@ -21,9 +33,31 @@ const clamp = (value: number, low: number, high: number) => Math.min(high, Math.
 
 let nextUid = 1
 
+interface TutorialState {
+  progress: TutorialProgress
+  sectionId: string | null
+  stepIndex: number
+}
+
+const startTutorial = (): TutorialState => {
+  const progress = loadProgress()
+  const section = nextIncompleteSection(TUTORIAL_SECTIONS, progress)
+  return {
+    progress,
+    sectionId: section?.id ?? null,
+    stepIndex: section ? firstIncompleteStep(section, progress) : 0,
+  }
+}
+
+const sectionStart = (sectionId: string | null): Circuit => {
+  const section = TUTORIAL_SECTIONS.find((candidate) => candidate.id === sectionId)
+  return section ? rekeyCircuit(section.start, () => `p${nextUid++}`) : EMPTY_CIRCUIT
+}
+
 function Build() {
-  const [circuit, setCircuit] = useState<Circuit>(EMPTY_CIRCUIT)
-  const [sim, setSim] = useState<Sim>(() => createSim(EMPTY_CIRCUIT))
+  const [tutorial, setTutorial] = useState<TutorialState>(startTutorial)
+  const [circuit, setCircuit] = useState<Circuit>(() => sectionStart(tutorial.sectionId))
+  const [sim, setSim] = useState<Sim>(() => createSim(circuit))
   const [designs, setDesigns] = useState<SavedDesign[]>(() => loadDesigns())
   const [docId, setDocId] = useState<string | null>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
@@ -46,9 +80,72 @@ function Build() {
     return () => observer.disconnect()
   }, [])
 
+  const activeSection = TUTORIAL_SECTIONS.find((section) => section.id === tutorial.sectionId)
+  const activeStep = activeSection?.steps[tutorial.stepIndex]
+  const resumeSection = nextIncompleteSection(TUTORIAL_SECTIONS, tutorial.progress)
+
+  /* Advances the tutorial when the change the learner just made satisfies the active step. */
+  const settleTutorial = (nextCircuit: Circuit, nextSim: Sim) => {
+    if (!activeSection || !activeStep?.done) return
+    if (!activeStep.done({ circuit: nextCircuit, nets: nextSim.nets })) return
+
+    setTutorial((current) => {
+      const section = TUTORIAL_SECTIONS.find((candidate) => candidate.id === current.sectionId)
+      const step = section?.steps[current.stepIndex]
+      if (!section || !step) return current
+
+      const progress = markStepComplete(current.progress, section, step.id)
+      persistProgress(progress)
+      const finished = current.stepIndex + 1 >= section.steps.length
+      return {
+        progress,
+        sectionId: finished ? null : section.id,
+        stepIndex: finished ? 0 : current.stepIndex + 1,
+      }
+    })
+  }
+
   const commit = (next: Circuit) => {
+    const nextSim = createSim(next)
+    setCircuit(next)
+    setSim(nextSim)
+    settleTutorial(next, nextSim)
+  }
+
+  const stepForward = () => {
+    if (!activeSection) return
+
+    const step = activeSection.steps[tutorial.stepIndex]
+    if (!step) return
+
+    const progress = markStepComplete(tutorial.progress, activeSection, step.id)
+    persistProgress(progress)
+    const finished = tutorial.stepIndex + 1 >= activeSection.steps.length
+    setTutorial({
+      progress,
+      sectionId: finished ? null : activeSection.id,
+      stepIndex: finished ? 0 : tutorial.stepIndex + 1,
+    })
+  }
+
+  const stepBack = () =>
+    setTutorial((current) => ({ ...current, stepIndex: Math.max(0, current.stepIndex - 1) }))
+
+  const exitTutorial = () => setTutorial((current) => ({ ...current, sectionId: null }))
+
+  const resumeTutorial = (sectionId: string) => {
+    const section = TUTORIAL_SECTIONS.find((candidate) => candidate.id === sectionId)
+    if (!section) return
+
+    const next = sectionStart(sectionId)
+    setSelected(null)
     setCircuit(next)
     setSim(createSim(next))
+    setTutorial((current) => ({
+      ...current,
+      sectionId,
+      stepIndex: firstIncompleteStep(section, current.progress),
+    }))
   }
 
   const canvasPoint = (clientX: number, clientY: number) => {
@@ -230,8 +327,16 @@ function Build() {
     commit({ ...circuit, wires: circuit.wires.filter((candidate) => candidate !== wire) })
   }
 
-  const toggleInput = (name: string) => setSim(advance(sim, { ...sim.values, [name]: !sim.values[name] }, false))
-  const clockTick = () => setSim(advance(sim, sim.values, true))
+  const toggleInput = (name: string) => {
+    const next = advance(sim, { ...sim.values, [name]: !sim.values[name] }, false)
+    setSim(next)
+    settleTutorial(circuit, next)
+  }
+  const clockTick = () => {
+    const next = advance(sim, sim.values, true)
+    setSim(next)
+    settleTutorial(circuit, next)
+  }
 
   const saveBuilt = () => {
     const name = nameDraft.trim()
@@ -275,7 +380,10 @@ function Build() {
   }
 
   const parts = allComponents()
-  const baseParts = parts.filter((component) => component.category !== 'custom')
+  const allowed = activeSection?.components
+  const baseParts = parts.filter(
+    (component) => component.category !== 'custom' && (!allowed || allowed.includes(component.id)),
+  )
   const builtParts = parts.filter((component) => component.category === 'custom')
   const ghostAnchor = drag?.kind === 'wire' ? anchorOf(circuit, drag.from) : undefined
   const ghost = ghostAnchor && drag?.kind === 'wire' ? { a: ghostAnchor, b: { x: drag.x, y: drag.y } } : null
@@ -307,6 +415,7 @@ function Build() {
 
         <div
           ref={canvasRef}
+          data-tutorial="canvas"
           onPointerDown={() => setSelected(null)}
           className="relative w-full overflow-hidden border border-amber-800"
           style={{
@@ -399,6 +508,28 @@ function Build() {
       </div>
 
       {docId && <ComponentDoc componentId={docId} onClose={() => setDocId(null)} />}
+
+      {activeSection && activeStep && (
+        <TutorialPanel
+          section={activeSection}
+          stepIndex={tutorial.stepIndex}
+          completed={tutorial.progress[activeSection.id]?.completed ?? []}
+          onBack={stepBack}
+          onNext={stepForward}
+          onExit={exitTutorial}
+        />
+      )}
+
+      {!activeSection && resumeSection && (
+        <button
+          className={`${buttonClass} fixed bottom-4 right-4 z-40`}
+          onClick={() => resumeTutorial(resumeSection.id)}
+        >
+          Resume tutorial: {resumeSection.title}
+        </button>
+      )}
+
+      <TutorialOverlay target={activeStep?.target} />
 
       {drag?.kind === 'palette' && (
         <div

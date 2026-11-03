@@ -44,7 +44,7 @@ export default function Inspector({
   onClear,
 }: InspectorProps) {
   return (
-    <aside className="space-y-4 md:col-span-2 lg:col-span-1">
+    <aside data-tutorial="inspector" className="space-y-4 md:col-span-2 lg:col-span-1">
       <section className="space-y-2">
         <h2 className="text-amber-300">Simulation</h2>
         {error && <p className="text-red-400">{error}</p>}
