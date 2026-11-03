@@ -1,6 +1,7 @@
 import type { Circuit } from '../game/circuit.ts'
+import type { TutorialTarget } from './targets.ts'
 
-export type TutorialTarget = string
+export type { TutorialTarget } from './targets.ts'
 
 export interface TutorialContext {
   circuit: Circuit
