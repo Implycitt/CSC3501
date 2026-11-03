@@ -347,13 +347,13 @@ function Build() {
   return (
     <div
       ref={rootRef}
-      className="select-none p-4 font-mono text-amber-400"
+      className="select-none p-4 font-mono text-mist-300"
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      <h1 className="mb-1 text-lg text-amber-300">Circuit sandbox</h1>
-      <p className="mb-4 max-w-xl text-xs leading-relaxed text-amber-500">
+      <h1 className="mb-1 text-lg text-mist-200">Circuit sandbox</h1>
+      <p className="mb-4 max-w-xl text-xs leading-relaxed text-mist-400">
         Drag a part onto the grid, then drag between its ports to wire it. Every part and port node moves by drag. To
         change a connection, click the wire and drag either end somewhere else — dropping it on empty space removes it.
       </p>
@@ -375,11 +375,11 @@ function Build() {
           ref={canvasRef}
           data-tutorial="canvas"
           onPointerDown={() => setSelected(null)}
-          className="relative w-full overflow-hidden border border-amber-800"
+          className="relative w-full overflow-hidden border border-mist-800"
           style={{
             maxWidth: CANVAS_W,
             aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
-            backgroundImage: 'radial-gradient(circle, rgb(120 53 15) 1px, transparent 1px)',
+            backgroundImage: 'radial-gradient(circle, rgb(47 65 80) 1px, transparent 1px)',
             backgroundSize: '20px 20px',
           }}
         >
@@ -494,7 +494,7 @@ function Build() {
 
       {drag?.kind === 'palette' && (
         <div
-          className="pointer-events-none fixed border border-amber-400 bg-black px-2 py-1 text-xs"
+          className="pointer-events-none fixed border border-signal/60 bg-void px-2 py-1 text-xs"
           style={{ left: drag.x + 12, top: drag.y + 12 }}
         >
           {getComponent(drag.componentId)?.name}

@@ -18,7 +18,7 @@ export default function WireLayer({ circuit, nets, selected, ghost, onSelect, on
       cx={position.x}
       cy={position.y}
       r={5}
-      className="cursor-grab fill-black stroke-amber-300"
+      className="cursor-grab fill-void stroke-signal"
       strokeWidth={2}
       style={{ pointerEvents: 'all' }}
       onPointerDown={(e) => onEdit(wire, end, e)}
@@ -40,7 +40,7 @@ export default function WireLayer({ circuit, nets, selected, ghost, onSelect, on
               d={path}
               fill="none"
               strokeWidth={active ? 3 : 2}
-              className={active ? 'stroke-amber-200' : isHigh(netOf(wire.from)) ? 'stroke-amber-300' : 'stroke-amber-800'}
+              className={active ? 'stroke-mist-100' : isHigh(netOf(wire.from)) ? 'stroke-signal' : 'stroke-mist-600'}
             />
             <path
               d={path}
@@ -65,7 +65,7 @@ export default function WireLayer({ circuit, nets, selected, ghost, onSelect, on
       })}
 
       {ghost && (
-        <path d={wirePath(ghost.a, ghost.b)} fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-amber-300" />
+        <path d={wirePath(ghost.a, ghost.b)} fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-signal" />
       )}
     </svg>
   )

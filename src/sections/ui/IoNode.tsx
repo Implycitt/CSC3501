@@ -36,12 +36,12 @@ export default function IoNode({
     <div
       data-node={key}
       onPointerDown={(e) => onMove(key, e)}
-      className="absolute flex cursor-move items-center border border-amber-500 bg-black"
+      className="absolute flex cursor-move items-center border border-mist-700 bg-panel"
       style={{ left: position.x, top: position.y, width: IO_W, height: IO_H }}
     >
       {kind === 'in' && (
         <span
-          className="h-full w-2.5 shrink-0 cursor-move border-r border-amber-800 bg-amber-950/40"
+          className="h-full w-2.5 shrink-0 cursor-move border-r border-mist-900 bg-sunk"
           style={gripStyle}
           title="Drag to move"
         />
@@ -65,7 +65,7 @@ export default function IoNode({
       )}
 
       <button
-        className="px-1 text-amber-700 hover:text-amber-300"
+        className="px-1 text-mist-600 hover:text-mist-100"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => onRemove(kind, name)}
         title={`Remove this ${kind === 'in' ? 'input' : 'output'}`}
@@ -75,7 +75,7 @@ export default function IoNode({
 
       {kind === 'out' && (
         <span
-          className="h-full w-2.5 shrink-0 cursor-move border-l border-amber-800 bg-amber-950/40"
+          className="h-full w-2.5 shrink-0 cursor-move border-l border-mist-900 bg-sunk"
           style={gripStyle}
           title="Drag to move"
         />
