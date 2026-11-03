@@ -1,6 +1,8 @@
 import { useState, type PointerEvent as ReactPointerEvent } from 'react'
 import type { ComponentCategory, ComponentDef } from '../../game/types.ts'
 import { buttonClass } from './styles.ts'
+import PartGlyph from './skins/PartGlyph.tsx'
+import { ACCENTS, skinFor } from './skins/index.ts'
 
 const GROUPS: { category: ComponentCategory; label: string }[] = [
   { category: 'logic', label: 'Gates' },
@@ -29,12 +31,18 @@ function PaletteItem({
   onStartPart: PaletteProps['onStartPart']
   onShowDoc: PaletteProps['onShowDoc']
 }) {
+  const skin = skinFor(part.id)
+  const accent = ACCENTS[skin.accent]
+
   return (
     <div
       onPointerDown={(e) => onStartPart(part.id, e)}
-      className="flex cursor-grab items-center justify-between gap-1 border border-amber-700 px-2 py-1 hover:border-amber-400"
+      className="flex cursor-grab items-center justify-between gap-1 border border-amber-800 py-1 pl-1.5 pr-2 hover:border-amber-400"
     >
-      <span className="truncate">{part.name}</span>
+      <span className="flex min-w-0 items-center gap-2">
+        <PartGlyph glyph={skin.glyph} image={skin.image} className={`h-3 w-5 shrink-0 ${accent.glyph}`} />
+        <span className="truncate">{part.name}</span>
+      </span>
       <button
         type="button"
         aria-label={`About ${part.name}`}
@@ -79,7 +87,7 @@ export default function Palette({
 
           return (
             <section key={group.category} className="space-y-1">
-              <h2 className="text-amber-300">{group.label}</h2>
+              <h2 className={ACCENTS[group.category].glyph}>{group.label}</h2>
               {groupParts.map((part) => (
                 <PaletteItem key={part.id} part={part} onStartPart={onStartPart} onShowDoc={onShowDoc} />
               ))}
@@ -89,7 +97,7 @@ export default function Palette({
 
         {(builtMatches.length > 0 || needle === '') && (
           <section className="space-y-1">
-            <h2 className="text-amber-300">Built</h2>
+            <h2 className={ACCENTS.custom.glyph}>Built</h2>
             {builtMatches.length === 0 && <p className="text-xs">None yet.</p>}
             {builtMatches.map((part) => (
               <PaletteItem key={part.id} part={part} onStartPart={onStartPart} onShowDoc={onShowDoc} />

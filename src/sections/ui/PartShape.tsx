@@ -1,8 +1,10 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { netOf, partKey, type PlacedPart, type Wire } from '../../game/circuit.ts'
 import { getComponent } from '../../game/registry.ts'
-import { HEAD_H, PART_W, ROW_H, partHeight, portsOf, rowCount } from './geometry.ts'
+import { HEAD_H, PART_W, PORT_HIT, ROW_H, partHeight, portsOf, rowCount } from './geometry.ts'
 import PortDot from './PortDot.tsx'
+import PartGlyph from './skins/PartGlyph.tsx'
+import { ACCENTS, skinFor } from './skins/index.ts'
 
 interface PartPortProps {
   portKey: string
@@ -22,8 +24,14 @@ function PartPort({ portKey, label, side, lit, onWire }: PartPortProps) {
           e.stopPropagation()
           onWire(portKey, e)
         }}
-        className="absolute z-10 cursor-crosshair"
-        style={{ [side]: -10, top: '50%', height: 20, width: 20, transform: 'translateY(-50%)' }}
+        className="group absolute z-10 cursor-crosshair"
+        style={{
+          [side]: -PORT_HIT / 2,
+          top: '50%',
+          height: PORT_HIT,
+          width: PORT_HIT,
+          transform: 'translateY(-50%)',
+        }}
       >
         <PortDot lit={lit} />
       </div>
@@ -47,18 +55,26 @@ export default function PartShape({ part, wires, nets, onMove, onWire, onRemove 
   const ports = portsOf(part.componentId)
   const rows = rowCount(part.componentId)
   const isHigh = (net: string) => nets.get(net) === true
+  const skin = skinFor(part.componentId)
+  const accent = ACCENTS[skin.accent]
 
   return (
     <div
       data-part={part.uid}
       onPointerDown={(e) => onMove(part.uid, e)}
-      className="absolute cursor-move border border-amber-500 bg-black"
+      className={`absolute cursor-grab active:cursor-grabbing border bg-black ${accent.border}`}
       style={{ left: part.x, top: part.y, width: PART_W, height: partHeight(part.componentId) }}
     >
-      <div className="flex items-center justify-between border-b border-amber-800 px-2" style={{ height: HEAD_H }}>
-        <span className="truncate text-xs">{getComponent(part.componentId)?.name ?? part.componentId}</span>
+      <div
+        className={`flex items-center gap-1.5 border-b px-1.5 ${accent.band}`}
+        style={{ height: HEAD_H }}
+      >
+        <PartGlyph glyph={skin.glyph} image={skin.image} className={`h-4 w-7 shrink-0 ${accent.glyph}`} />
+        <span className="truncate text-xs" title={getComponent(part.componentId)?.name ?? part.componentId}>
+          {getComponent(part.componentId)?.name ?? part.componentId}
+        </span>
         <button
-          className="text-amber-700 hover:text-amber-300"
+          className="ml-auto flex h-full w-5 shrink-0 items-center justify-center text-amber-700 hover:text-amber-300"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => onRemove(part.uid)}
           title="Remove this part"
