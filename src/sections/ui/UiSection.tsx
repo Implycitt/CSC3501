@@ -85,7 +85,6 @@ function Build() {
   const activeStep = activeSection?.steps[tutorial.stepIndex]
   const resumeSection = nextIncompleteSection(TUTORIAL_SECTIONS, tutorial.progress)
 
-  /* Advances the tutorial when the change the learner just made satisfies the active step. */
   const settleTutorial = (nextCircuit: Circuit, nextSim: Sim) => {
     if (!activeSection || !activeStep?.done) return
     if (!activeStep.done({ circuit: nextCircuit, nets: nextSim.nets })) return
