@@ -64,10 +64,14 @@ function Build() {
     return () => observer.disconnect()
   }, [])
 
-  const activeSection = TUTORIAL_SECTIONS.find((section) => section.id === tutorial.sectionId)
+  const activeSection = tutorial.paused
+    ? undefined
+    : TUTORIAL_SECTIONS.find((section) => section.id === tutorial.sectionId)
   const activeStep = activeSection?.steps[tutorial.stepIndex]
   const features = featuresFor(activeSection)
-  const resumeSection = nextIncompleteSection(TUTORIAL_SECTIONS, tutorial.progress)
+  const resumeSection = tutorial.paused
+    ? TUTORIAL_SECTIONS.find((section) => section.id === tutorial.sectionId)
+    : nextIncompleteSection(TUTORIAL_SECTIONS, tutorial.progress)
 
   const applySession = (next: TutorialSession) => {
     if (next === tutorial) return
@@ -91,10 +95,13 @@ function Build() {
   const exitTutorial = () => applySession(closeSession(tutorial))
 
   const resumeTutorial = (sectionId: string) => {
-    const next = sectionCircuit(TUTORIAL_SECTIONS, sectionId)
-    setSelected(null)
-    setCircuit(next)
-    setSim(createSim(next))
+    const pausedHere = tutorial.paused && tutorial.sectionId === sectionId
+    if (!pausedHere) {
+      const next = sectionCircuit(TUTORIAL_SECTIONS, sectionId)
+      setSelected(null)
+      setCircuit(next)
+      setSim(createSim(next))
+    }
     applySession(resumeSession(TUTORIAL_SECTIONS, tutorial, sectionId))
   }
 
