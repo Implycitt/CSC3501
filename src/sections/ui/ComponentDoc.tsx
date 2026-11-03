@@ -114,7 +114,7 @@ export default function ComponentDoc({ componentId, onClose }: ComponentDocProps
         </section>
 
         <p className="mt-4 border-t line pt-2 text-[10px] ink-faint">
-          Full documentation for this part is coming soon.
+          We are still writing the full write-up for this part.
         </p>
       </div>
     </div>

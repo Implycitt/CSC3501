@@ -113,6 +113,14 @@
     color: var(--palette-ink-strong);
   }
 
+  .hover-sunk:hover {
+    background-color: var(--palette-sunk);
+  }
+
+  .is-selected {
+    box-shadow: 0 0 0 1px var(--palette-live);
+  }
+
   .line {
     border-color: var(--palette-line);
   }

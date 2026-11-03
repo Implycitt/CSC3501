@@ -20,6 +20,8 @@ interface InspectorProps {
   designs: SavedDesign[]
   onTick: () => void
   onRemoveWire: (wire: Wire) => void
+  selectedPart: { name: string } | null
+  onRemoveSelectedPart: () => void
   onNameDraft: (value: string) => void
   onSave: () => void
   onLoadDesign: (id: string) => void
@@ -39,6 +41,8 @@ export default function Inspector({
   designs,
   onTick,
   onRemoveWire,
+  selectedPart,
+  onRemoveSelectedPart,
   onNameDraft,
   onSave,
   onLoadDesign,
@@ -58,7 +62,21 @@ export default function Inspector({
             Tick clock
           </button>
         )}
-        {circuit.outputs.length === 0 && <p className="text-xs">Add an output to read a result.</p>}
+        {circuit.outputs.length === 0 && <p className="text-xs">Add an output to see a result.</p>}
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-amber-300">Selected part</h2>
+        {selectedPart ? (
+          <>
+            <p className="text-xs">{selectedPart.name}</p>
+            <button className={`btn block w-full`} onClick={onRemoveSelectedPart}>
+              Remove part
+            </button>
+          </>
+        ) : (
+          <p className="text-xs">Click a part to select it, then press Delete to remove it.</p>
+        )}
       </section>
 
       <section className="space-y-2">
@@ -68,7 +86,7 @@ export default function Inspector({
             <p className="text-xs">
               {endpointLabel(circuit, selected.from)} → {endpointLabel(circuit, selected.to)}
             </p>
-            <p className="text-xs ink-dim">Drag either end to re-route.</p>
+            <p className="text-xs ink-dim">Drag either end to move the connection.</p>
             <button className={`btn block w-full`} onClick={() => onRemoveWire(selected)}>
               Remove wire
             </button>
