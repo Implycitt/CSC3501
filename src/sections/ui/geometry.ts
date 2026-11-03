@@ -3,7 +3,7 @@ import type { Circuit } from '../../game/circuit.ts'
 
 export const CANVAS_W = 820
 export const CANVAS_H = 560
-export const PART_W = 140
+export const PART_W = 156
 export const HEAD_H = 26
 export const ROW_H = 24
 export const PART_PAD = 8
@@ -13,6 +13,8 @@ export const IO_GAP = 44
 export const MARGIN = 20
 export const OUT_X = CANVAS_W - MARGIN - IO_W
 export const CLICK_SLOP = 4
+export const GRID = 20
+export const PORT_HIT = 24
 
 export interface Point {
   x: number
@@ -79,3 +81,5 @@ export function wirePath(a: Point, b: Point): string {
   const bend = Math.max(40, Math.abs(b.x - a.x) / 2)
   return `M${a.x} ${a.y} C${a.x + bend} ${a.y} ${b.x - bend} ${b.y} ${b.x} ${b.y}`
 }
+
+export const snap = (value: number): number => Math.round(value / GRID) * GRID

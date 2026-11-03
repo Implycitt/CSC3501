@@ -1,5 +1,5 @@
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { IO_H, IO_W, type Point } from './geometry.ts'
+import { IO_H, IO_W, PORT_HIT, type Point } from './geometry.ts'
 import PortDot from './PortDot.tsx'
 import { gripStyle } from './styles.ts'
 
@@ -65,7 +65,7 @@ export default function IoNode({
       )}
 
       <button
-        className="px-1 text-mist-600 hover:text-mist-100"
+        className="flex h-full w-5 items-center justify-center text-mist-600 hover:text-mist-100"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => onRemove(kind, name)}
         title={`Remove this ${kind === 'in' ? 'input' : 'output'}`}
@@ -83,8 +83,8 @@ export default function IoNode({
 
       <div
         data-port={key}
-        className="absolute top-0 z-10 h-full w-5 cursor-crosshair"
-        style={kind === 'in' ? { right: -10 } : { left: -10 }}
+        className="group absolute top-0 z-10 h-full cursor-crosshair"
+        style={kind === 'in' ? { right: -PORT_HIT / 2, width: PORT_HIT } : { left: -PORT_HIT / 2, width: PORT_HIT }}
         title="Drag to wire"
         onPointerDown={(e) => {
           e.stopPropagation()

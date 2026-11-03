@@ -1,6 +1,8 @@
 import { useState, type PointerEvent as ReactPointerEvent } from 'react'
 import type { ComponentCategory, ComponentDef } from '../../game/types.ts'
 import { buttonClass } from './styles.ts'
+import PartGlyph from './skins/PartGlyph.tsx'
+import { ACCENTS, skinFor } from './skins/index.ts'
 
 const GROUPS: { category: ComponentCategory; label: string }[] = [
   { category: 'logic', label: 'Gates' },
@@ -33,13 +35,19 @@ function PaletteItem({
   onShowDoc: PaletteProps['onShowDoc']
   allowDocs: boolean
 }) {
+  const skin = skinFor(part.id)
+  const accent = ACCENTS[skin.accent]
+
   return (
     <div
       data-tutorial={`palette:${part.id}`}
       onPointerDown={(e) => onStartPart(part.id, e)}
-      className="flex cursor-grab items-center justify-between gap-1 border border-mist-700 px-2 py-1 hover:border-signal"
+      className="flex cursor-grab items-center justify-between gap-1 border border-mist-700 py-1 pl-1.5 pr-2 hover:border-signal"
     >
-      <span className="truncate">{part.name}</span>
+      <span className="flex min-w-0 items-center gap-2">
+        <PartGlyph glyph={skin.glyph} image={skin.image} className={`h-3 w-5 shrink-0 ${accent.glyph}`} />
+        <span className="truncate">{part.name}</span>
+      </span>
       {allowDocs && (
         <button
           type="button"
@@ -88,7 +96,7 @@ export default function Palette({
 
           return (
             <section key={group.category} className="space-y-1">
-              <h2 className="text-mist-200">{group.label}</h2>
+              <h2 className={ACCENTS[group.category].glyph}>{group.label}</h2>
               {groupParts.map((part) => (
                 <PaletteItem
                   key={part.id}
@@ -104,7 +112,7 @@ export default function Palette({
 
         {(builtMatches.length > 0 || needle === '') && (
           <section className="space-y-1">
-            <h2 className="text-mist-200">Built</h2>
+            <h2 className={ACCENTS.custom.glyph}>Built</h2>
             {builtMatches.length === 0 && <p className="text-xs">None yet.</p>}
             {builtMatches.map((part) => (
               <PaletteItem

@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { getComponent, resolveForSim } from '../../game/registry.ts'
 import type { ComponentCategory } from '../../game/types.ts'
+import PartGlyph from './skins/PartGlyph.tsx'
+import { ACCENTS, skinFor } from './skins/index.ts'
 
 const CATEGORY_LABELS: Record<ComponentCategory, string> = {
   logic: 'Logic gate',
@@ -37,6 +39,9 @@ export default function ComponentDoc({ componentId, onClose }: ComponentDocProps
 
   if (!part) return null
 
+  const skin = skinFor(componentId)
+  const accent = ACCENTS[skin.accent]
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 p-4"
@@ -51,11 +56,14 @@ export default function ComponentDoc({ componentId, onClose }: ComponentDocProps
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-3 flex items-start justify-between gap-3 border-b border-mist-900 pb-2">
-          <div>
-            <h2 id="component-doc-title" className="text-base text-mist-200">
-              {part.name}
-            </h2>
-            <p className="text-[10px] uppercase tracking-widest text-mist-600">{CATEGORY_LABELS[part.category]}</p>
+          <div className="flex items-center gap-2">
+            <PartGlyph glyph={skin.glyph} image={skin.image} className={`h-4 w-7 shrink-0 ${accent.glyph}`} />
+            <div>
+              <h2 id="component-doc-title" className="text-base text-mist-200">
+                {part.name}
+              </h2>
+              <p className="text-[10px] uppercase tracking-widest text-mist-600">{CATEGORY_LABELS[part.category]}</p>
+            </div>
           </div>
           <button
             type="button"
