@@ -1,5 +1,6 @@
 import { type Circuit, type Wire } from '../../game/circuit.ts'
 import { getComponent } from '../../game/registry.ts'
+import type { SavedDesign } from '../../game/library.ts'
 import { buttonClass } from './styles.ts'
 
 function endpointLabel(circuit: Circuit, key: string): string {
@@ -17,10 +18,13 @@ interface InspectorProps {
   selected: Wire | null
   nameDraft: string
   status: string
+  designs: SavedDesign[]
   onTick: () => void
   onRemoveWire: (wire: Wire) => void
   onNameDraft: (value: string) => void
   onSave: () => void
+  onLoadDesign: (id: string) => void
+  onDeleteDesign: (id: string) => void
   onClear: () => void
 }
 
@@ -30,10 +34,13 @@ export default function Inspector({
   selected,
   nameDraft,
   status,
+  designs,
   onTick,
   onRemoveWire,
   onNameDraft,
   onSave,
+  onLoadDesign,
+  onDeleteDesign,
   onClear,
 }: InspectorProps) {
   return (
@@ -67,7 +74,7 @@ export default function Inspector({
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-amber-300">Save as part</h2>
+        <h2 className="text-amber-300">Save to library</h2>
         <input
           className="w-full border border-amber-700 bg-transparent px-2 py-1 placeholder:text-amber-900"
           placeholder="Part name"
@@ -78,6 +85,29 @@ export default function Inspector({
           Save as part
         </button>
         {status && <p className="text-xs">{status}</p>}
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-amber-300">Library</h2>
+        {designs.length === 0 && <p className="text-xs">Saved parts appear here and in the Built list.</p>}
+        {designs.map((design) => (
+          <div key={design.id} className="space-y-1 border border-amber-800 p-2">
+            <p className="truncate text-xs" title={design.name}>
+              {design.name}
+            </p>
+            <p className="text-[10px] text-amber-700">
+              {design.circuit.parts.length} part{design.circuit.parts.length === 1 ? '' : 's'}
+            </p>
+            <div className="flex gap-1">
+              <button className={`${buttonClass} flex-1`} onClick={() => onLoadDesign(design.id)}>
+                Load
+              </button>
+              <button className={`${buttonClass} flex-1`} onClick={() => onDeleteDesign(design.id)}>
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
       </section>
 
       <button className={`${buttonClass} block w-full`} onClick={onClear}>

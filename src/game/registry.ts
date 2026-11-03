@@ -16,14 +16,24 @@ const BASE_COMPONENTS: ComponentDef[] = [
   ...HISTORICAL_COMPONENTS,
 ]
 
+export interface BuiltDesign {
+  id: string
+  name: string
+  circuit: Circuit
+}
+
 interface BuiltPart {
   def: ComponentDef
-  netlist: Netlist
+  circuit: Circuit
   inputs: string[]
   outputs: string[]
+  netlist?: Netlist
 }
 
 const built = new Map<string, BuiltPart>()
+const resolving = new Set<string>()
+
+export const builtId = (designId: string) => `built:${designId}`
 
 export function allComponents(): ComponentDef[] {
   return [...BASE_COMPONENTS, ...Array.from(built.values(), (part) => part.def)]
@@ -33,21 +43,54 @@ export function getComponent(id: string): ComponentDef | undefined {
   return allComponents().find((c) => c.id === id)
 }
 
+function portsOfComponent(id: string): { inputs: string[]; outputs: string[] } | undefined {
+  const resolved = resolveForSim(id)
+  return resolved ? { inputs: resolved.inputs, outputs: resolved.outputs } : undefined
+}
+
+function netlistOf(part: BuiltPart): Netlist {
+  if (part.netlist) return part.netlist
+  if (resolving.has(part.def.id)) throw new Error(`Circular component: ${part.def.name}`)
+
+  resolving.add(part.def.id)
+  try {
+    part.netlist = circuitToNetlist(part.circuit, portsOfComponent)
+    return part.netlist
+  } finally {
+    resolving.delete(part.def.id)
+  }
+}
+
 export function resolveForSim(id: string): { primitive?: string; netlist?: Netlist; inputs: string[]; outputs: string[] } | undefined {
   if (id in PRIMITIVES) return { primitive: id, inputs: PRIMITIVES[id].inputs, outputs: PRIMITIVES[id].outputs }
   const b = built.get(id)
-  if (b) return { netlist: b.netlist, inputs: b.inputs, outputs: b.outputs }
+  if (b) return { netlist: netlistOf(b), inputs: b.inputs, outputs: b.outputs }
   const netlist = NETLISTS[id]
   return netlist ? { netlist, inputs: netlist.inputs, outputs: netlist.outputs } : undefined
 }
 
-export function registerBuilt(name: string, circuit: Circuit): ComponentDef {
-  const id = `built:${built.size + 1}:${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
-  const def: ComponentDef = { id, name, category: 'custom', description: `Built from ${circuit.parts.length} parts.` }
-  const netlist = circuitToNetlist(circuit, (cid) => {
-    const r = resolveForSim(cid)
-    return r ? { inputs: r.inputs, outputs: r.outputs } : undefined
+export function registerBuilt(design: BuiltDesign): ComponentDef {
+  const count = design.circuit.parts.length
+  const def: ComponentDef = {
+    id: builtId(design.id),
+    name: design.name,
+    category: 'custom',
+    description: `Built from ${count} part${count === 1 ? '' : 's'}.`,
+  }
+  built.set(def.id, {
+    def,
+    circuit: design.circuit,
+    inputs: [...design.circuit.inputs],
+    outputs: [...design.circuit.outputs],
   })
-  built.set(id, { def, netlist, inputs: [...circuit.inputs], outputs: [...circuit.outputs] })
   return def
+}
+
+export function unregisterBuilt(id: string): boolean {
+  return built.delete(id.startsWith('built:') ? id : builtId(id))
+}
+
+export function clearBuilt(): void {
+  built.clear()
+  resolving.clear()
 }

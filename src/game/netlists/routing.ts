@@ -61,8 +61,8 @@ export const ROUTING_NETLISTS: Record<string, Netlist> = {
     inputs: ['d0', 'd1', 'd2', 'd3'],
     outputs: ['a', 'b'],
     instances: [
-      { id: 'oa', component: 'or', connections: { a: 'd2', b: 'd3', y: 'a' } },
-      { id: 'ob', component: 'or', connections: { a: 'd1', b: 'd3', y: 'b' } },
+      { id: 'oa', component: 'or', connections: { a: 'd1', b: 'd3', y: 'a' } },
+      { id: 'ob', component: 'or', connections: { a: 'd2', b: 'd3', y: 'b' } },
     ],
   },
   comparator1: {

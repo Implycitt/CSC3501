@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { allComponents, getComponent, registerBuilt } from '../../game/registry.ts'
-import { connectWire, EMPTY_CIRCUIT, type Circuit, type PlacedPart, type Wire } from '../../game/circuit.ts'
+import { allComponents, builtId, getComponent } from '../../game/registry.ts'
+import { connectWire, EMPTY_CIRCUIT, rekeyCircuit, type Circuit, type PlacedPart, type Wire } from '../../game/circuit.ts'
+import { addDesign, designsUsing, loadDesigns, removeDesign, type SavedDesign } from '../../game/library.ts'
 import { CANVAS_H, CANVAS_W, CLICK_SLOP, HEAD_H, IO_H, IO_W, PART_W, anchorOf, ioPos, partHeight, portsOf } from './geometry.ts'
 import { advance, createSim, type Sim } from './simulator.ts'
 import PartShape from './PartShape.tsx'
@@ -22,6 +23,7 @@ let nextUid = 1
 function Build() {
   const [circuit, setCircuit] = useState<Circuit>(EMPTY_CIRCUIT)
   const [sim, setSim] = useState<Sim>(() => createSim(EMPTY_CIRCUIT))
+  const [designs, setDesigns] = useState<SavedDesign[]>(() => loadDesigns())
   const [drag, setDrag] = useState<Drag | null>(null)
   const [selected, setSelected] = useState<Wire | null>(null)
   const [nameDraft, setNameDraft] = useState('')
@@ -233,11 +235,41 @@ function Build() {
     const name = nameDraft.trim()
     if (!name || circuit.parts.length === 0) return
 
-    const part = registerBuilt(name, circuit)
-    setStatus(`Saved ${part.name}. It is now in the Built list.`)
+    const design = addDesign(name, circuit)
+    if (!design) return
+
+    setDesigns(loadDesigns())
+    setStatus(`Saved ${design.name}. It is now in the Built list.`)
     setNameDraft('')
     setSelected(null)
-    commit(EMPTY_CIRCUIT)
+  }
+
+  const loadSaved = (id: string) => {
+    const design = designs.find((candidate) => candidate.id === id)
+    if (!design) return
+
+    setSelected(null)
+    commit(rekeyCircuit(design.circuit, () => `p${nextUid++}`))
+    setStatus(`Loaded ${design.name}.`)
+  }
+
+  const deleteSaved = (id: string) => {
+    const design = designs.find((candidate) => candidate.id === id)
+    if (!design) return
+
+    if (circuit.parts.some((part) => part.componentId === builtId(id))) {
+      setStatus(`Remove ${design.name} from the canvas before deleting it.`)
+      return
+    }
+
+    const dependents = designsUsing(designs, id)
+    if (dependents.length > 0) {
+      setStatus(`${design.name} is used by ${dependents.map((dependent) => dependent.name).join(', ')}.`)
+      return
+    }
+
+    setDesigns(removeDesign(id))
+    setStatus(`Deleted ${design.name}.`)
   }
 
   const parts = allComponents()
@@ -352,10 +384,13 @@ function Build() {
           selected={selected}
           nameDraft={nameDraft}
           status={status}
+          designs={designs}
           onTick={clockTick}
           onRemoveWire={removeWire}
           onNameDraft={setNameDraft}
           onSave={saveBuilt}
+          onLoadDesign={loadSaved}
+          onDeleteDesign={deleteSaved}
           onClear={() => commit(EMPTY_CIRCUIT)}
         />
       </div>

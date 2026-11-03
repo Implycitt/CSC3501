@@ -62,6 +62,24 @@ export function connectWire(circuit: Circuit, a: string, b: string, ports: PortL
   return { ...circuit, wires: circuit.wires.filter((w) => w.to !== to).concat({ from, to }) }
 }
 
+export function rekeyCircuit(circuit: Circuit, makeUid: () => string): Circuit {
+  const uids = new Map(circuit.parts.map((part) => [part.uid, makeUid()]))
+  const remapKey = (key: string): string => {
+    if (!key.startsWith('part:')) return key
+    const [, uid, ...rest] = key.split(':')
+    const next = uids.get(uid)
+    return next ? `part:${next}:${rest.join(':')}` : key
+  }
+
+  return {
+    parts: circuit.parts.map((part) => ({ ...part, uid: uids.get(part.uid) ?? part.uid })),
+    wires: circuit.wires.map((wire) => ({ from: remapKey(wire.from), to: remapKey(wire.to) })),
+    inputs: [...circuit.inputs],
+    outputs: [...circuit.outputs],
+    layout: Object.fromEntries(Object.entries(circuit.layout).map(([key, point]) => [remapKey(key), { ...point }])),
+  }
+}
+
 export function circuitToNetlist(circuit: Circuit, ports: PortLookup): Netlist {
   const instances: Instance[] = []
   for (const part of circuit.parts) {
