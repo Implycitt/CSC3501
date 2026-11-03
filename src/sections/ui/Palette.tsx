@@ -14,24 +14,50 @@ interface PaletteProps {
   parts: ComponentDef[]
   built: ComponentDef[]
   onStartPart: (componentId: string, e: ReactPointerEvent) => void
+  onShowDoc: (componentId: string) => void
   onAddInput: () => void
   onAddOutput: () => void
   onAddClock: () => void
 }
 
-function PaletteItem({ part, onStartPart }: { part: ComponentDef; onStartPart: PaletteProps['onStartPart'] }) {
+function PaletteItem({
+  part,
+  onStartPart,
+  onShowDoc,
+}: {
+  part: ComponentDef
+  onStartPart: PaletteProps['onStartPart']
+  onShowDoc: PaletteProps['onShowDoc']
+}) {
   return (
     <div
-      title={part.description}
       onPointerDown={(e) => onStartPart(part.id, e)}
-      className="cursor-grab border border-amber-700 px-2 py-1 hover:border-amber-400"
+      className="flex cursor-grab items-center justify-between gap-1 border border-amber-700 px-2 py-1 hover:border-amber-400"
     >
-      {part.name}
+      <span className="truncate">{part.name}</span>
+      <button
+        type="button"
+        aria-label={`About ${part.name}`}
+        title={`About ${part.name}`}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => onShowDoc(part.id)}
+        className="shrink-0 px-1 text-amber-700 hover:text-amber-300"
+      >
+        ?
+      </button>
     </div>
   )
 }
 
-export default function Palette({ parts, built, onStartPart, onAddInput, onAddOutput, onAddClock }: PaletteProps) {
+export default function Palette({
+  parts,
+  built,
+  onStartPart,
+  onShowDoc,
+  onAddInput,
+  onAddOutput,
+  onAddClock,
+}: PaletteProps) {
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()
   const visible = (part: ComponentDef) => part.name.toLowerCase().includes(needle)
@@ -55,7 +81,7 @@ export default function Palette({ parts, built, onStartPart, onAddInput, onAddOu
             <section key={group.category} className="space-y-1">
               <h2 className="text-amber-300">{group.label}</h2>
               {groupParts.map((part) => (
-                <PaletteItem key={part.id} part={part} onStartPart={onStartPart} />
+                <PaletteItem key={part.id} part={part} onStartPart={onStartPart} onShowDoc={onShowDoc} />
               ))}
             </section>
           )
@@ -66,7 +92,7 @@ export default function Palette({ parts, built, onStartPart, onAddInput, onAddOu
             <h2 className="text-amber-300">Built</h2>
             {builtMatches.length === 0 && <p className="text-xs">None yet.</p>}
             {builtMatches.map((part) => (
-              <PaletteItem key={part.id} part={part} onStartPart={onStartPart} />
+              <PaletteItem key={part.id} part={part} onStartPart={onStartPart} onShowDoc={onShowDoc} />
             ))}
           </section>
         )}

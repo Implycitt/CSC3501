@@ -9,6 +9,7 @@ import IoNode from './IoNode.tsx'
 import WireLayer from './WireLayer.tsx'
 import Palette from './Palette.tsx'
 import Inspector from './Inspector.tsx'
+import ComponentDoc from './ComponentDoc.tsx'
 
 type Drag =
   | { kind: 'palette'; componentId: string; startX: number; startY: number; x: number; y: number }
@@ -24,6 +25,7 @@ function Build() {
   const [circuit, setCircuit] = useState<Circuit>(EMPTY_CIRCUIT)
   const [sim, setSim] = useState<Sim>(() => createSim(EMPTY_CIRCUIT))
   const [designs, setDesigns] = useState<SavedDesign[]>(() => loadDesigns())
+  const [docId, setDocId] = useState<string | null>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
   const [selected, setSelected] = useState<Wire | null>(null)
   const [nameDraft, setNameDraft] = useState('')
@@ -297,6 +299,7 @@ function Build() {
           parts={baseParts}
           built={builtParts}
           onStartPart={startPalette}
+          onShowDoc={setDocId}
           onAddInput={() => addIO('in')}
           onAddOutput={() => addIO('out')}
           onAddClock={addClock}
@@ -394,6 +397,8 @@ function Build() {
           onClear={() => commit(EMPTY_CIRCUIT)}
         />
       </div>
+
+      {docId && <ComponentDoc componentId={docId} onClose={() => setDocId(null)} />}
 
       {drag?.kind === 'palette' && (
         <div
