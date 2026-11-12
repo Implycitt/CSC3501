@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+@theme {
+  --color-void: #080d12;
+  --color-panel: #0e161d;
+  --color-sunk: #18242e;
+
+  --color-mist-100: #e6eef3;
+  --color-mist-200: #cbdae3;
+  --color-mist-300: #a4bdcc;
+  --color-mist-400: #82a0b2;
+  --color-mist-500: #718c9d;
+  --color-mist-600: #68869a;
+  --color-mist-700: #4c6376;
+  --color-mist-800: #37495a;
+  --color-mist-900: #24313c;
+
+  --color-signal: #6ee7c7;
+}
