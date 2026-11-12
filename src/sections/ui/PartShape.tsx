@@ -63,11 +63,14 @@ export default function PartShape({ part, selected, wires, nets, onMove, onWire,
     <div
       data-part={part.uid}
       onPointerDown={(e) => onMove(part.uid, e)}
-      className="absolute cursor-move border border-mist-700 bg-panel"
+      className={`absolute cursor-move border bg-panel ${selected ? 'border-signal' : 'border-mist-700'}`}
       style={{ left: part.x, top: part.y, width: PART_W, height: partHeight(part.componentId) }}
     >
       <div className="flex items-center justify-between border-b border-mist-900 px-2" style={{ height: HEAD_H }}>
-        <span className="truncate text-xs">{getComponent(part.componentId)?.name ?? part.componentId}</span>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <PartGlyph glyph={skin.glyph} image={skin.image} className={`h-3 w-5 shrink-0 ${accent.glyph}`} />
+          <span className="truncate text-xs">{getComponent(part.componentId)?.name ?? part.componentId}</span>
+        </div>
         <button
           className="text-mist-600 hover:text-mist-100"
           onPointerDown={(e) => e.stopPropagation()}
