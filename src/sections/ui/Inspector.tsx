@@ -66,7 +66,7 @@ export default function Inspector({
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-amber-300">Selected part</h2>
+        <h2 className="amber">Selected part</h2>
         {selectedPart ? (
           <>
             <p className="text-xs">{selectedPart.name}</p>

@@ -1,7 +1,7 @@
-import UiSection from './sections/ui/UiSection.tsx'
+import Game from './sections/game/Game.tsx'
 
 function App() {
-  return <UiSection />
+  return <Game />
 }
 
 export default App

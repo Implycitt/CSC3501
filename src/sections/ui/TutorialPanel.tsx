@@ -19,17 +19,17 @@ export default function TutorialPanel({ section, stepIndex, completed, onBack, o
   return (
     <aside
       aria-live="polite"
-      className="fixed bottom-4 right-4 z-50 w-[min(24rem,calc(100vw-2rem))] space-y-2 border edge veil p-3 font-mono text-xs ink"
+      className="fixed bottom-4 right-4 z-50 max-h-[calc(100vh-2rem)] w-[min(24rem,calc(100vw-2rem))] space-y-2 overflow-y-auto border edge bg-[var(--palette-surface)] p-3 font-mono text-xs ink"
     >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[10px] uppercase tracking-widest ink-dim">Tutorial · {section.title}</p>
+          <p className="text-[10px] uppercase tracking-widest ink-dim">Repair procedure · {section.title}</p>
           <h2 className="text-sm ink-strong">{step.title}</h2>
         </div>
         <button
           type="button"
-          aria-label="Exit tutorial"
-          title="Exit tutorial"
+          aria-label="Close repair procedure"
+          title="Close repair procedure"
           className="px-1 ink-faint hover-ink"
           onClick={onExit}
         >
@@ -58,7 +58,7 @@ export default function TutorialPanel({ section, stepIndex, completed, onBack, o
             Back
           </button>
           <button type="button" className="btn" onClick={onNext}>
-            {last ? 'Finish' : 'Next'}
+            {last ? 'Log repair' : 'Next'}
           </button>
         </div>
       </div>

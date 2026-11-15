@@ -13,7 +13,7 @@ import ComponentDoc from './ComponentDoc.tsx'
 import TutorialPanel from './TutorialPanel.tsx'
 import TutorialOverlay from './TutorialOverlay.tsx'
 import { TUTORIAL_SECTIONS } from '../../tutorial/index.ts'
-import { loadProgress, nextIncompleteSection, persistProgress } from '../../tutorial/progress.ts'
+import { isSectionComplete, loadProgress, nextIncompleteSection, persistProgress } from '../../tutorial/progress.ts'
 import {
   advanceSession,
   closeSession,
@@ -34,11 +34,19 @@ type Drag =
 
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value))
 
+interface UiSectionProps {
+  focusSectionId?: string
+  onSectionComplete?: (sectionId: string) => void
+}
+
 let nextUid = 1
 
-function Build() {
-  const [tutorial, setTutorial] = useState<TutorialSession>(() => startSession(TUTORIAL_SECTIONS, loadProgress()))
-  const [circuit, setCircuit] = useState<Circuit>(() => sectionCircuit(TUTORIAL_SECTIONS, tutorial.sectionId))
+function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
+  const sections = focusSectionId
+    ? TUTORIAL_SECTIONS.filter((section) => section.id === focusSectionId)
+    : TUTORIAL_SECTIONS
+  const [tutorial, setTutorial] = useState<TutorialSession>(() => startSession(sections, loadProgress()))
+  const [circuit, setCircuit] = useState<Circuit>(() => sectionCircuit(sections, tutorial.sectionId ?? focusSectionId ?? null))
   const [sim, setSim] = useState<Sim>(() => createSim(circuit))
   const [designs, setDesigns] = useState<SavedDesign[]>(() => loadDesigns())
   const [docId, setDocId] = useState<string | null>(null)
@@ -65,22 +73,33 @@ function Build() {
 
   const activeSection = tutorial.paused
     ? undefined
-    : TUTORIAL_SECTIONS.find((section) => section.id === tutorial.sectionId)
+    : sections.find((section) => section.id === tutorial.sectionId)
   const activeStep = activeSection?.steps[tutorial.stepIndex]
-  const features = featuresFor(activeSection)
+  const baseFeatures = featuresFor(activeSection)
+  const features = focusSectionId
+    ? { ...baseFeatures, addPorts: false, saveDesign: false, library: false, clearCanvas: false }
+    : baseFeatures
+  const focusedSection = focusSectionId ? sections[0] : undefined
+  const focusComplete = focusedSection ? isSectionComplete(tutorial.progress, focusedSection) : false
   const resumeSection = tutorial.paused
-    ? TUTORIAL_SECTIONS.find((section) => section.id === tutorial.sectionId)
-    : nextIncompleteSection(TUTORIAL_SECTIONS, tutorial.progress)
+    ? sections.find((section) => section.id === tutorial.sectionId)
+    : nextIncompleteSection(sections, tutorial.progress)
 
   const applySession = (next: TutorialSession) => {
     if (next === tutorial) return
 
     persistProgress(next.progress)
     setTutorial(next)
+
+    for (const section of sections) {
+      if (isSectionComplete(next.progress, section) && !isSectionComplete(tutorial.progress, section)) {
+        onSectionComplete?.(section.id)
+      }
+    }
   }
 
   const settleTutorial = (nextCircuit: Circuit, nextSim: Sim, ticks: number = tutorial.ticks) =>
-    applySession(settleSession(TUTORIAL_SECTIONS, tutorial, nextCircuit, nextSim.nets, ticks))
+    applySession(settleSession(sections, tutorial, nextCircuit, nextSim.nets, ticks))
 
   const commit = (next: Circuit) => {
     const nextSim = createSim(next)
@@ -89,19 +108,19 @@ function Build() {
     settleTutorial(next, nextSim)
   }
 
-  const stepForward = () => applySession(advanceSession(TUTORIAL_SECTIONS, tutorial))
+  const stepForward = () => applySession(advanceSession(sections, tutorial))
   const stepBack = () => applySession(retreatSession(tutorial))
   const exitTutorial = () => applySession(closeSession(tutorial))
 
   const resumeTutorial = (sectionId: string) => {
     const pausedHere = tutorial.paused && tutorial.sectionId === sectionId
     if (!pausedHere) {
-      const next = sectionCircuit(TUTORIAL_SECTIONS, sectionId)
+      const next = sectionCircuit(sections, sectionId)
       setSelected(null)
       setCircuit(next)
       setSim(createSim(next))
     }
-    applySession(resumeSession(TUTORIAL_SECTIONS, tutorial, sectionId))
+    applySession(resumeSession(sections, tutorial, sectionId))
   }
 
   const canvasPoint = (clientX: number, clientY: number) => {
@@ -384,19 +403,40 @@ function Build() {
   return (
     <div
       ref={rootRef}
-      className="select-none p-4 font-mono ink"
+      className="select-none p-2 font-mono ink sm:p-3"
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      <h1 className="mb-1 text-lg ink-strong">Circuit sandbox</h1>
-      <p className="mb-4 max-w-xl text-xs leading-relaxed ink-soft">
+      <h1 className={`mb-1 text-lg ink-strong ${focusSectionId ? 'hidden' : ''}`}>Repair bench</h1>
+      <p className={`mb-4 max-w-xl text-xs leading-relaxed ink-soft ${focusSectionId ? 'hidden' : ''}`}>
         Drag a part onto the grid, then drag from one port to another to wire them together. Parts and inputs can both
         be moved by dragging. To change a connection, click the wire and drag one end somewhere else. Drop a wire on
         empty space and it is removed. Click a part and press Delete to take it off the canvas.
       </p>
 
-      <div className="grid items-start gap-4 md:grid-cols-[180px_minmax(0,1fr)] lg:grid-cols-[180px_minmax(0,1fr)_220px]">
+      {focusSectionId && !activeSection && focusedSection && !focusComplete && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border edge-soft px-3 py-2">
+          <p className="text-[10px] amber">Repair procedure paused.</p>
+          <button type="button" className="btn" onClick={() => resumeTutorial(focusedSection.id)}>
+            Resume repair
+          </button>
+        </div>
+      )}
+
+      {focusSectionId && !activeSection && focusComplete && (
+        <div className="mb-3 border edge-soft px-3 py-2">
+          <p className="text-[10px] phosphor">Procedure complete. Use the procedure rail above to continue.</p>
+        </div>
+      )}
+
+      <div
+        className={`grid items-start ${
+          focusSectionId
+            ? 'gap-3 md:grid-cols-[150px_minmax(0,1fr)] lg:grid-cols-[150px_minmax(0,1fr)_190px]'
+            : 'gap-4 md:grid-cols-[180px_minmax(0,1fr)] lg:grid-cols-[180px_minmax(0,1fr)_220px]'
+        }`}
+      >
         <Palette
           parts={baseParts}
           built={builtParts}
@@ -407,6 +447,7 @@ function Build() {
           onAddClock={addClock}
           allowPorts={features.addPorts}
           allowDocs={features.componentDocs}
+          allowLibrary={features.library}
         />
 
         <div
@@ -524,12 +565,12 @@ function Build() {
         />
       )}
 
-      {!activeSection && resumeSection && (
+      {!focusSectionId && !activeSection && resumeSection && (
         <button
           className={`btn fixed bottom-4 right-4 z-40`}
           onClick={() => resumeTutorial(resumeSection.id)}
         >
-          Resume tutorial: {resumeSection.title}
+          Resume repair: {resumeSection.title}
         </button>
       )}
 

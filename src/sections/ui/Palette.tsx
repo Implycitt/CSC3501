@@ -21,6 +21,7 @@ interface PaletteProps {
   onAddClock: () => void
   allowPorts: boolean
   allowDocs: boolean
+  allowLibrary: boolean
 }
 
 function PaletteItem({
@@ -73,6 +74,7 @@ export default function Palette({
   onAddClock,
   allowPorts,
   allowDocs,
+  allowLibrary,
 }: PaletteProps) {
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()
@@ -81,12 +83,14 @@ export default function Palette({
 
   return (
     <aside data-tutorial="palette" className="flex flex-col gap-3 md:max-h-[70vh]">
-      <input
-        className="shrink-0 border edge bg-transparent px-2 py-1 text-xs placeholder-faint edge-focus focus:outline-none"
-        placeholder="Search parts"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
+      {parts.length + built.length > 4 && (
+        <input
+          className="shrink-0 border edge bg-transparent px-2 py-1 text-xs placeholder-faint edge-focus focus:outline-none"
+          placeholder="Search parts"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      )}
 
       <div className="min-h-0 space-y-4 overflow-y-auto pr-1">
         {GROUPS.map((group) => {
@@ -109,7 +113,7 @@ export default function Palette({
           )
         })}
 
-        {(builtMatches.length > 0 || needle === '') && (
+        {allowLibrary && (builtMatches.length > 0 || needle === '') && (
           <section className="space-y-1">
             <h2 className={`accent-ink ${accentClass('custom')}`}>Built</h2>
             {builtMatches.length === 0 && <p className="text-xs">Nothing saved yet.</p>}

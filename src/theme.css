@@ -1,59 +1,95 @@
 @import "tailwindcss";
 
+@theme {
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-mono: "IBM Plex Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, "Lucida Console", monospace;
+  --color-background: #0f1636;
+  --color-surface: #051c30;
+  --color-pine: #336c84;
+  --color-foam: #69b7b6;
+  --color-text: #e5f7f5;
+}
+
 :root {
   color-scheme: dark;
 
-  --palette-base: #080d12;
-  --palette-surface: #0e161d;
-  --palette-sunk: #18242e;
-  --palette-track: #2a3a46;
-  --palette-veil: rgb(8 13 18 / 0.95);
-  --palette-drape: rgb(8 13 18 / 0.8);
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-mono: "IBM Plex Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, "Lucida Console", monospace;
+
+  /* Source swatches: night, deep, hull, steel, cyan, pink, plum. */
+  --swatch-night: #0f1636;
+  --swatch-deep: #051c30;
+  --swatch-hull: #042740;
+  --swatch-steel: #336c84;
+  --swatch-cyan: #69b7b6;
+  --swatch-pink: #d66f9c;
+  --swatch-plum: #93307e;
+
+  --palette-base: var(--swatch-night);
+  --palette-surface: var(--swatch-deep);
+  --palette-sunk: var(--swatch-hull);
+  --palette-track: #1d4056;
+  --palette-veil: rgb(15 22 54 / 0.95);
+  --palette-drape: rgb(15 22 54 / 0.8);
   --palette-shade: rgb(0 0 0 / 0.55);
 
-  --palette-ink-strong: #cbdae3;
-  --palette-ink: #a4bdcc;
-  --palette-ink-soft: #82a0b2;
-  --palette-ink-dim: #718c9d;
-  --palette-ink-faint: #68869a;
-  --palette-ink-danger: #fda4af;
+  --palette-ink-strong: #e5f7f5;
+  --palette-ink: #b7dedc;
+  --palette-ink-soft: #8fb9bf;
+  --palette-ink-dim: #6f9eaa;
+  --palette-ink-faint: #5c8494;
+  --palette-ink-danger: #e08ac4;
+  --palette-rust: var(--swatch-plum);
+  --palette-cold: var(--swatch-cyan);
+  --palette-amber-soft: #f3a9c6;
 
-  --palette-line: #24313c;
-  --palette-edge-soft: #37495a;
-  --palette-edge: #4c6376;
+  --palette-line: #1d4056;
+  --palette-edge-soft: #2c5a70;
+  --palette-edge: #417e91;
 
-  --palette-live: #6ee7c7;
-  --palette-live-ring: rgb(110 231 199 / 0.6);
-  --palette-live-halo: rgb(110 231 199 / 0.5);
+  --palette-live: var(--swatch-cyan);
+  --palette-live-ring: rgb(105 183 182 / 0.6);
+  --palette-live-halo: rgb(105 183 182 / 0.5);
 
-  --palette-grid: #2f4150;
-  --palette-grip: #68869a;
-  --palette-wire-idle: #68869a;
-  --palette-wire-active: #e6eef3;
+  --palette-grid: #244457;
+  --palette-grip: #5c8494;
+  --palette-wire-idle: #5c8494;
+  --palette-wire-active: #dff4f2;
 
-  --accent-logic: #e0a83c;
-  --accent-logic-ink: #f0cd8a;
-  --accent-logic-band: rgb(224 168 60 / 0.12);
-  --accent-arithmetic: #6fa8cf;
-  --accent-arithmetic-ink: #a9d4ee;
-  --accent-arithmetic-band: rgb(111 168 207 / 0.12);
-  --accent-routing: #9b8bf4;
-  --accent-routing-ink: #c4b5fd;
-  --accent-routing-band: rgb(155 139 244 / 0.12);
-  --accent-memory: #4ade9b;
-  --accent-memory-ink: #86efac;
-  --accent-memory-band: rgb(74 222 155 / 0.12);
-  --accent-historical: #e8899b;
-  --accent-historical-ink: #f4aab8;
-  --accent-historical-band: rgb(232 137 155 / 0.12);
-  --accent-custom: #4dc9c0;
-  --accent-custom-ink: #8fe3dc;
-  --accent-custom-band: rgb(77 201 192 / 0.12);
+  --palette-phosphor: var(--swatch-cyan);
+  --palette-phosphor-dim: #4f9f9f;
+  --palette-amber: var(--swatch-pink);
+  --palette-terminal: var(--swatch-hull);
+  --palette-terminal-scan: rgb(105 183 182 / 0.045);
+  --palette-terminal-glow: rgb(105 183 182 / 0.18);
+
+  --accent-logic: #d66f9c;
+  --accent-logic-ink: #f3a9c6;
+  --accent-logic-band: rgb(214 111 156 / 0.12);
+  --accent-arithmetic: #336c84;
+  --accent-arithmetic-ink: #a8d9dd;
+  --accent-arithmetic-band: rgb(51 108 132 / 0.14);
+  --accent-routing: #93307e;
+  --accent-routing-ink: #e08ac4;
+  --accent-routing-band: rgb(147 48 126 / 0.14);
+  --accent-memory: #69b7b6;
+  --accent-memory-ink: #b9e6e3;
+  --accent-memory-band: rgb(105 183 182 / 0.12);
+  --accent-historical: #c05a9e;
+  --accent-historical-ink: #f3b6d0;
+  --accent-historical-band: rgb(192 90 158 / 0.12);
+  --accent-custom: #4a8e9a;
+  --accent-custom-ink: #a8d9dd;
+  --accent-custom-band: rgb(74 142 154 / 0.12);
 }
 
 :root {
   background-color: var(--palette-base);
   color: var(--palette-ink);
+}
+
+body {
+  font-family: var(--font-mono);
 }
 
 @layer components {
@@ -249,5 +285,461 @@
     --accent: var(--accent-custom);
     --accent-ink: var(--accent-custom-ink);
     --accent-band: var(--accent-custom-band);
+  }
+}
+
+@layer components {
+  .game-bg {
+    background-color: var(--palette-base);
+    background-image:
+      radial-gradient(circle at 18% 0%, rgb(214 111 156 / 0.08), transparent 42%),
+      radial-gradient(circle at 82% 100%, rgb(51 108 132 / 0.16), transparent 44%),
+      linear-gradient(rgb(51 108 132 / 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(51 108 132 / 0.08) 1px, transparent 1px);
+    background-size: auto, auto, 32px 32px, 32px 32px;
+  }
+
+  .crt {
+    position: relative;
+    background-color: var(--palette-terminal);
+    background-image: radial-gradient(ellipse at center, rgb(105 183 182 / 0.05), transparent 72%);
+    color: var(--palette-phosphor);
+    image-rendering: pixelated;
+  }
+
+  .crt::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      var(--palette-terminal-scan) 3px
+    );
+    opacity: 0.55;
+  }
+
+  .bezel {
+    border: 1px solid var(--palette-edge-soft);
+    box-shadow:
+      inset 0 0 0 1px rgb(0 0 0 / 0.8),
+      inset 0 0 32px rgb(105 183 182 / 0.05),
+      0 0 24px rgb(0 0 0 / 0.35);
+  }
+
+  .phosphor {
+    color: var(--palette-phosphor);
+  }
+
+  .phosphor-dim {
+    color: var(--palette-phosphor-dim);
+  }
+
+  .amber {
+    color: var(--palette-amber);
+  }
+
+  .crt-input {
+    background: transparent;
+    color: var(--palette-phosphor);
+    caret-color: var(--palette-phosphor);
+    font-family: inherit;
+    tab-size: 2;
+  }
+
+  .crt-input:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 1px var(--palette-phosphor-dim);
+  }
+
+  .terminal-shell {
+    min-height: calc(100vh - 10rem);
+    background-color: var(--palette-terminal);
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgb(105 183 182 / 0.09), transparent 64%),
+      linear-gradient(rgb(105 183 182 / 0.025) 1px, transparent 1px);
+    background-size: auto, 100% 4px;
+  }
+
+  .terminal-editor {
+    background-color: rgb(0 0 0 / 0.18);
+  }
+
+  .terminal-textarea {
+    padding: 0.9rem 1rem;
+    background: transparent;
+    color: var(--palette-phosphor);
+    caret-color: var(--palette-phosphor);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    tab-size: 2;
+  }
+
+  .terminal-textarea:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 1px var(--palette-phosphor-dim);
+  }
+
+  .terminal-output {
+    background-color: rgb(0 0 0 / 0.16);
+  }
+
+  .btn-live {
+    border-color: var(--palette-phosphor-dim);
+    color: var(--palette-phosphor);
+  }
+
+  .btn-live:hover {
+    border-color: var(--palette-phosphor);
+    box-shadow: 0 0 12px var(--palette-terminal-glow);
+  }
+
+  .led {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    border: 1px solid var(--palette-edge);
+    background-color: var(--palette-sunk);
+  }
+
+  .led-on {
+    border-color: var(--palette-phosphor);
+    background-color: var(--palette-phosphor);
+    box-shadow: 0 0 6px var(--palette-terminal-glow);
+  }
+
+  .led-wait {
+    border-color: var(--palette-amber);
+    background-color: var(--palette-amber);
+  }
+
+  .led-fault {
+    border-color: var(--palette-ink-danger);
+    background-color: var(--palette-ink-danger);
+    animation: led-pulse 1.4s steps(2, end) infinite;
+  }
+
+  .phase-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--palette-line);
+    background-color: var(--palette-surface);
+    padding: 6px 8px;
+    text-align: left;
+  }
+
+  .phase-card:not(:disabled):hover {
+    border-color: var(--palette-live);
+  }
+
+  .phase-card:disabled {
+    cursor: default;
+  }
+
+  .phase-online {
+    border-color: rgb(105 183 182 / 0.35);
+  }
+
+  .phase-firmware {
+    border-color: rgb(214 111 156 / 0.35);
+  }
+
+  .phase-circuit {
+    border-color: rgb(147 48 126 / 0.55);
+  }
+
+  .phase-online .phase-label {
+    color: var(--palette-phosphor);
+  }
+
+  .phase-firmware .phase-label {
+    color: var(--palette-amber);
+  }
+
+  .phase-circuit .phase-label {
+    color: var(--palette-ink-danger);
+  }
+
+  .deck-node {
+    position: absolute;
+    left: 25%;
+    right: 25%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border: 1px solid var(--palette-edge-soft);
+    background-color: rgb(5 28 48 / 0.85);
+    padding: 0.3rem 0.5rem;
+    text-align: left;
+    backdrop-filter: blur(2px);
+    transition: border-color 120ms, background-color 120ms, box-shadow 120ms;
+  }
+
+  .deck-node:not(:disabled) {
+    cursor: pointer;
+  }
+
+  .deck-node:not(:disabled):hover {
+    border-color: var(--palette-live);
+    background-color: var(--palette-surface);
+    box-shadow: 0 0 0 1px var(--palette-live-ring), 0 0 24px rgb(105 183 182 / 0.14);
+  }
+
+  .deck-node:focus-visible {
+    outline: 1px solid var(--palette-live);
+    outline-offset: 2px;
+  }
+
+  .deck-node:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+
+  .deck-node-online {
+    border-color: rgb(105 183 182 / 0.4);
+  }
+
+  .deck-node-firmware {
+    border-color: rgb(214 111 156 / 0.4);
+  }
+
+  .deck-node-circuit {
+    border-color: rgb(147 48 126 / 0.55);
+  }
+
+  .mission-screen {
+    --palette-base: var(--swatch-night);
+    --palette-surface: var(--swatch-deep);
+    --palette-sunk: var(--swatch-hull);
+    --palette-track: #1d4056;
+    --palette-veil: rgb(15 22 54 / 0.95);
+    --palette-drape: rgb(15 22 54 / 0.84);
+    --palette-shade: rgb(0 0 0 / 0.16);
+
+    --palette-ink-strong: #e5f7f5;
+    --palette-ink: #b7dedc;
+    --palette-ink-soft: #8fb9bf;
+    --palette-ink-dim: #6f9eaa;
+    --palette-ink-faint: #5c8494;
+    --palette-ink-danger: #e08ac4;
+
+    --palette-line: #1d4056;
+    --palette-edge-soft: #2c5a70;
+    --palette-edge: #417e91;
+
+    --palette-live: var(--swatch-cyan);
+    --palette-live-ring: rgb(105 183 182 / 0.6);
+    --palette-live-halo: rgb(105 183 182 / 0.4);
+
+    --palette-grid: #244457;
+    --palette-grip: #5c8494;
+    --palette-wire-idle: #5c8494;
+    --palette-wire-active: #dff4f2;
+
+    --palette-phosphor: var(--swatch-cyan);
+    --palette-phosphor-dim: #4f9f9f;
+    --palette-amber: var(--swatch-pink);
+    --palette-terminal: var(--swatch-hull);
+    --palette-terminal-scan: rgb(105 183 182 / 0.04);
+    --palette-terminal-glow: rgb(105 183 182 / 0.18);
+
+    position: relative;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    background-color: var(--palette-base);
+    background-image:
+      radial-gradient(circle at 28% 12%, rgb(214 111 156 / 0.07), transparent 48%),
+      radial-gradient(circle at 76% 92%, rgb(51 108 132 / 0.12), transparent 56%),
+      linear-gradient(rgb(51 108 132 / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(51 108 132 / 0.035) 1px, transparent 1px);
+    background-size: auto, 32px 32px, 32px 32px;
+    image-rendering: pixelated;
+  }
+
+  .mission-screen .led-fault {
+    animation: none;
+  }
+
+  .mission-panel {
+    border: 2px solid var(--palette-edge-soft);
+    border-top-color: var(--palette-edge);
+    border-left-color: var(--palette-edge);
+    border-right-color: var(--palette-line);
+    border-bottom-color: var(--palette-line);
+    background-color: rgb(5 28 48 / 0.95);
+    box-shadow:
+      inset 0 0 0 1px #000,
+      0 0 0 1px rgb(0 0 0 / 0.8);
+  }
+
+  .mission-board {
+    border-top: 4px solid var(--palette-amber);
+    box-shadow:
+      inset 0 0 0 1px #000,
+      6px 6px 0 rgb(0 0 0 / 0.35);
+  }
+
+  .status-pip {
+    width: 20px;
+    height: 8px;
+    border: 1px solid var(--palette-line);
+    background-color: transparent;
+  }
+
+  .status-pip-online {
+    border-color: var(--palette-phosphor);
+    background-color: var(--palette-phosphor);
+  }
+
+  .status-pip-firmware {
+    border-color: var(--palette-amber);
+    background-color: rgb(214 111 156 / 0.45);
+  }
+
+  .status-pip-circuit {
+    border-color: var(--palette-ink-danger);
+    background-color: rgb(147 48 126 / 0.3);
+  }
+
+  .mission-priority {
+    border-left: 2px solid var(--palette-amber);
+    padding-left: 10px;
+    text-align: left;
+  }
+
+  .mission-index-row {
+    transition: background-color 80ms, box-shadow 80ms;
+  }
+
+  .mission-index-row:not(:disabled):hover {
+    background-color: var(--palette-sunk);
+    box-shadow: inset 2px 0 0 var(--palette-amber);
+  }
+
+  .mission-index-row:focus-visible {
+    outline: 1px solid var(--palette-phosphor);
+    outline-offset: -1px;
+  }
+
+  .ship-map {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 2px solid var(--palette-edge-soft);
+    background-color: var(--palette-terminal);
+    background-image:
+      linear-gradient(rgb(105 183 182 / 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(105 183 182 / 0.045) 1px, transparent 1px);
+    background-size: 16px 16px;
+    image-rendering: pixelated;
+  }
+
+  .ship-map::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      rgb(0 0 0 / 0.1) 3px
+    );
+    opacity: 0.18;
+  }
+
+  .ship-level-node {
+    position: absolute;
+    z-index: 4;
+    display: flex;
+    width: 30px;
+    height: 26px;
+    transform: translate(-50%, -50%);
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--palette-edge);
+    background-color: var(--palette-terminal);
+    color: var(--palette-ink-strong);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    box-shadow: inset 0 0 0 1px #000;
+    transition: background-color 80ms, border-color 80ms, color 80ms, box-shadow 80ms;
+  }
+
+  .ship-level-node:not(:disabled) {
+    cursor: pointer;
+  }
+
+  .ship-level-node:not(:disabled):hover {
+    z-index: 6;
+    transform: translate(-50%, -50%);
+    border-color: var(--palette-amber);
+    background-color: rgb(16 54 72 / 0.96);
+    color: var(--palette-ink-strong);
+    box-shadow: inset 0 0 0 1px #000, 0 0 0 2px var(--palette-amber);
+  }
+
+  .ship-level-node:focus-visible {
+    z-index: 6;
+    outline: 1px solid var(--palette-phosphor);
+    outline-offset: 3px;
+  }
+
+  .ship-level-node:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+    filter: none;
+  }
+
+  .ship-level-node-circuit {
+    border-color: var(--palette-ink-danger);
+    color: var(--palette-ink-danger);
+  }
+
+  .ship-level-node-firmware {
+    border-color: var(--palette-amber);
+    color: var(--palette-amber);
+  }
+
+  .ship-level-node-complete {
+    border-color: var(--palette-phosphor);
+    background-color: rgb(105 183 182 / 0.14);
+    color: var(--palette-phosphor);
+  }
+
+  .ship-level-node-current {
+    box-shadow: inset 0 0 0 1px #000, 0 0 0 1px var(--palette-amber);
+    animation: node-blink 1.2s steps(2, end) infinite;
+  }
+}
+
+@keyframes led-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+
+@keyframes node-blink {
+  50% {
+    border-color: var(--palette-phosphor);
+    background-color: rgb(105 183 182 / 0.18);
+    box-shadow: inset 0 0 0 1px #000, 0 0 0 1px var(--palette-amber);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .led-fault,
+  .ship-level-node-current {
+    animation: none;
   }
 }
