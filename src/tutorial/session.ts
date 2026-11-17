@@ -1,5 +1,12 @@
 import { EMPTY_CIRCUIT, rekeyCircuit, type Circuit } from '../game/circuit.ts'
-import { firstIncompleteStep, markStepComplete, nextIncompleteSection } from './progress.ts'
+import { matchesCircuitGoal } from '../game/behavior.ts'
+import {
+  firstIncompleteStep,
+  isSectionComplete,
+  markSectionComplete,
+  markStepComplete,
+  nextIncompleteSection,
+} from './progress.ts'
 import type { TutorialProgress, TutorialSection } from './types.ts'
 
 export interface TutorialSession {
@@ -56,8 +63,20 @@ export function settleSession(
   const section = findSection(sections, session.sectionId)
   if (!section) return session
 
-  const step = section.steps[session.stepIndex]
   const current = ticks === session.ticks ? session : { ...session, ticks }
+  if (section.mode === 'puzzle' && section.goal && !isSectionComplete(session.progress, section)) {
+    if (current.ticks < (section.goal.requiredTicks ?? 0)) return current
+    if (!matchesCircuitGoal(circuit, section.goal)) return current
+    return {
+      progress: markSectionComplete(session.progress, section),
+      sectionId: null,
+      stepIndex: 0,
+      ticks: current.ticks,
+      paused: false,
+    }
+  }
+
+  const step = section.steps[session.stepIndex]
   if (!step?.done || !step.done({ circuit, nets, ticks })) return current
 
   return completeStep(section, current, step.id)

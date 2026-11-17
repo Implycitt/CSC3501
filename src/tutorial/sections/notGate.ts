@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, inputLow, outputDriven, outputHigh, outputLow, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -7,15 +8,17 @@ export const notGateSection: TutorialSection = {
   id: 'logic-not',
   title: 'The NOT gate',
   summary: 'Invert a single signal and watch the output do the opposite.',
+  objective: 'y = NOT a',
+  mode: 'puzzle',
+  goal: logicGoal(['a'], 'y', (a) => !a),
   components: ['not'],
-  features: {
-    addPorts: false,
-    saveDesign: false,
-    library: false,
-    clearCanvas: false,
-    componentDocs: false,
-  },
-  start: environment().input('a').output('y').build(),
+  start: environment()
+    .input('a')
+    .output('y')
+    .place('buffer', { as: 'wrong', x: 300, y: 120 })
+    .wire('in:a', 'wrong.a')
+    .wire('wrong.y', 'out:y')
+    .build(),
   steps: [
     {
       id: 'place-not',

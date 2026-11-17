@@ -300,7 +300,7 @@ export default function LevelSelect({
         className="deck-stage"
         ref={stageRef}
         role="group"
-        aria-label={`${SHIP_NAME} deck schematic. Each deck has four numbered relays.`}
+        aria-label={`${SHIP_NAME} deck schematic. Each deck has a chain of numbered relays.`}
       >
         <ShipBlueprint
           objectiveIndex={activeIndex}

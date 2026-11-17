@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, inputLow, outputDriven, outputHigh, outputLow, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -7,8 +8,20 @@ export const muxRouterSection: TutorialSection = {
   id: 'logic-mux',
   title: 'Shield router',
   summary: 'Route one of two shield buses into the grid with a select line.',
+  objective: 'y = sel ? b : a',
+  mode: 'puzzle',
+  goal: logicGoal(['a', 'b', 'sel'], 'y', (a, b, sel) => (sel ? b : a)),
   components: ['mux2'],
-  start: environment().input('a').input('b').input('sel').output('y').build(),
+  start: environment()
+    .input('a')
+    .input('b')
+    .input('sel')
+    .output('y')
+    .place('mux2', { as: 'route', x: 300, y: 120 })
+    .wire('in:a', 'route.a')
+    .wire('in:b', 'route.b')
+    .wire('route.y', 'out:y')
+    .build(),
   steps: [
     {
       id: 'place-mux',

@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, inputLow, outputDriven, outputHigh, outputLow, partDrivenBy, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -7,6 +8,9 @@ export const orPrioritySection: TutorialSection = {
   id: 'logic-or-priority',
   title: 'Priority steering',
   summary: 'Merge two buses, then let one enable line veto both.',
+  objective: 'y = (a OR b) AND enable',
+  mode: 'puzzle',
+  goal: logicGoal(['a', 'b', 'enable'], 'y', (a, b, enable) => (a || b) && enable),
   components: ['or', 'and'],
   start: environment()
     .input('a')

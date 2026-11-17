@@ -19,6 +19,25 @@ export const memoryShiftSection: TutorialSection = {
   id: 'memory-shift',
   title: 'The shift cell',
   summary: 'Chain two latch stages so one bit moves through them on each clock edge.',
+  objective: 'push one bit through q0, then q1, on each Tick clock',
+  mode: 'puzzle',
+  goal: {
+    inputs: ['d', 'clk'],
+    outputs: ['q0', 'q1'],
+    requiredTicks: 1,
+    traces: [
+      {
+        name: 'one bit walks the chain',
+        steps: [
+          { inputs: { d: false }, outputs: { q0: false, q1: false } },
+          { inputs: { d: true }, tick: true, outputs: { q0: true, q1: false } },
+          { inputs: { d: true }, tick: true, outputs: { q0: true, q1: true } },
+          { inputs: { d: false }, tick: true, outputs: { q0: false, q1: true } },
+          { inputs: { d: false }, tick: true, outputs: { q0: false, q1: false } },
+        ],
+      },
+    ],
+  },
   components: ['d-flip-flop'],
   features: { addPorts: false },
   start: environment().input('d').clock().output('q0').output('q1').build(),

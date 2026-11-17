@@ -30,6 +30,7 @@ interface InspectorProps {
   allowSave: boolean
   allowLibrary: boolean
   allowClear: boolean
+  compact?: boolean
 }
 
 export default function Inspector({
@@ -51,50 +52,50 @@ export default function Inspector({
   allowSave,
   allowLibrary,
   allowClear,
+  compact = false,
 }: InspectorProps) {
+  const hasClock = circuit.inputs.includes('clk')
+  const hasContent = Boolean(error || hasClock || selectedPart || selected || allowSave || allowLibrary || allowClear)
+
+  if (!hasContent) return null
+
   return (
-    <aside data-tutorial="inspector" className="space-y-4 md:col-span-2 lg:col-span-1">
-      <section data-tutorial="simulation" className="space-y-2">
-        <h2 className="ink-strong">Simulation</h2>
-        {error && <p className="ink-danger">{error}</p>}
-        {circuit.inputs.includes('clk') && (
-          <button className={`btn block w-full`} onClick={onTick}>
-            Tick clock
+    <aside
+      data-tutorial="inspector"
+      className={compact ? 'inspector-rail' : 'space-y-3 md:col-span-2 lg:col-span-1'}
+    >
+      {(error || hasClock) && (
+        <section data-tutorial="simulation" className="space-y-2">
+          {error && <p className="ink-danger">{error}</p>}
+          {hasClock && (
+            <button className="btn block w-full" onClick={onTick}>
+              Tick clock
+            </button>
+          )}
+        </section>
+      )}
+
+      {selectedPart && (
+        <section className="space-y-2">
+          <h2 className="amber">Selected part</h2>
+          <p className="text-xs">{selectedPart.name}</p>
+          <button className="btn block w-full" onClick={onRemoveSelectedPart}>
+            Remove part
           </button>
-        )}
-        {circuit.outputs.length === 0 && <p className="text-xs">Add an output to see a result.</p>}
-      </section>
+        </section>
+      )}
 
-      <section className="space-y-2">
-        <h2 className="amber">Selected part</h2>
-        {selectedPart ? (
-          <>
-            <p className="text-xs">{selectedPart.name}</p>
-            <button className={`btn block w-full`} onClick={onRemoveSelectedPart}>
-              Remove part
-            </button>
-          </>
-        ) : (
-          <p className="text-xs">Click a part to select it, then press Delete to remove it.</p>
-        )}
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="ink-strong">Selected wire</h2>
-        {selected ? (
-          <>
-            <p className="text-xs">
-              {endpointLabel(circuit, selected.from)} → {endpointLabel(circuit, selected.to)}
-            </p>
-            <p className="text-xs ink-dim">Drag either end to move the connection.</p>
-            <button className={`btn block w-full`} onClick={() => onRemoveWire(selected)}>
-              Remove wire
-            </button>
-          </>
-        ) : (
-          <p className="text-xs">Click a wire to select it.</p>
-        )}
-      </section>
+      {selected && (
+        <section className="space-y-2">
+          <h2 className="ink-strong">Selected wire</h2>
+          <p className="text-xs">
+            {endpointLabel(circuit, selected.from)} → {endpointLabel(circuit, selected.to)}
+          </p>
+          <button className="btn block w-full" onClick={() => onRemoveWire(selected)}>
+            Remove wire
+          </button>
+        </section>
+      )}
 
       {allowSave && (
         <section data-tutorial="save" className="space-y-2">
@@ -106,7 +107,7 @@ export default function Inspector({
             onChange={(e) => onNameDraft(e.target.value)}
           />
           <button
-            className={`btn block w-full`}
+            className="btn block w-full"
             disabled={circuit.parts.length === 0}
             onClick={onSave}
           >
@@ -119,7 +120,7 @@ export default function Inspector({
       {allowLibrary && (
         <section data-tutorial="library" className="space-y-2">
           <h2 className="ink-strong">Library</h2>
-          {designs.length === 0 && <p className="text-xs">Saved parts appear here and in the Built list.</p>}
+          {designs.length === 0 && <p className="text-xs">Nothing saved yet.</p>}
           {designs.map((design) => (
             <div key={design.id} className="space-y-1 border line p-2">
               <p className="truncate text-xs" title={design.name}>
@@ -129,10 +130,10 @@ export default function Inspector({
                 {design.circuit.parts.length} part{design.circuit.parts.length === 1 ? '' : 's'}
               </p>
               <div className="flex gap-1">
-                <button className={`btn flex-1`} onClick={() => onLoadDesign(design.id)}>
+                <button className="btn flex-1" onClick={() => onLoadDesign(design.id)}>
                   Load
                 </button>
-                <button className={`btn flex-1`} onClick={() => onDeleteDesign(design.id)}>
+                <button className="btn flex-1" onClick={() => onDeleteDesign(design.id)}>
                   Delete
                 </button>
               </div>
@@ -142,7 +143,7 @@ export default function Inspector({
       )}
 
       {allowClear && (
-        <button data-tutorial="clear" className={`btn block w-full`} onClick={onClear}>
+        <button data-tutorial="clear" className="btn block w-full" onClick={onClear}>
           Clear canvas
         </button>
       )}

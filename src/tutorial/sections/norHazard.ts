@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, inputLow, outputDriven, outputHigh, outputLow, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -7,8 +8,19 @@ export const norHazardSection: TutorialSection = {
   id: 'logic-nor',
   title: 'Hazard veto',
   summary: 'Raise the shield only while both hazard lines are clear.',
+  objective: 'y = NOT (a OR b)',
+  mode: 'puzzle',
+  goal: logicGoal(['a', 'b'], 'y', (a, b) => !(a || b)),
   components: ['nor'],
-  start: environment().input('a').input('b').output('y').build(),
+  start: environment()
+    .input('a')
+    .input('b')
+    .output('y')
+    .place('or', { as: 'wrong', x: 300, y: 120 })
+    .wire('in:a', 'wrong.a')
+    .wire('in:b', 'wrong.b')
+    .wire('wrong.y', 'out:y')
+    .build(),
   steps: [
     {
       id: 'place-nor',

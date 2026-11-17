@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, outputDriven, outputHigh, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -7,8 +8,19 @@ export const orGateSection: TutorialSection = {
   id: 'logic-or',
   title: 'The OR gate',
   summary: 'Find out how little it takes to turn an OR gate on.',
+  objective: 'y = a OR b',
+  mode: 'puzzle',
+  goal: logicGoal(['a', 'b'], 'y', (a, b) => a || b),
   components: ['or'],
-  start: environment().input('a').input('b').output('y').build(),
+  start: environment()
+    .input('a')
+    .input('b')
+    .output('y')
+    .place('and', { as: 'wrong', x: 300, y: 120 })
+    .wire('in:a', 'wrong.a')
+    .wire('in:b', 'wrong.b')
+    .wire('wrong.y', 'out:y')
+    .build(),
   steps: [
     {
       id: 'place-or',

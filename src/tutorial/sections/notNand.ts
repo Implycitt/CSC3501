@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, inputLow, outputDriven, outputHigh, outputLow, partDrivenBy, placed } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -7,6 +8,9 @@ export const notNandSection: TutorialSection = {
   id: 'logic-not-nand',
   title: 'The NAND interlock',
   summary: 'Invert an AND result to make a gate that blocks a double lockdown.',
+  objective: 'y = NOT (a AND b)',
+  mode: 'puzzle',
+  goal: logicGoal(['a', 'b'], 'y', (a, b) => !(a && b)),
   components: ['and', 'not'],
   start: environment()
     .input('a')

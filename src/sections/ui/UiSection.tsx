@@ -10,14 +10,15 @@ import WireLayer from './WireLayer.tsx'
 import Palette from './Palette.tsx'
 import Inspector from './Inspector.tsx'
 import ComponentDoc from './ComponentDoc.tsx'
+import ComponentBrowser from './ComponentBrowser.tsx'
 import TutorialPanel from './TutorialPanel.tsx'
 import TutorialOverlay from './TutorialOverlay.tsx'
+import PuzzleBrief from './PuzzleBrief.tsx'
+import SignalMonitor from './SignalMonitor.tsx'
 import { TUTORIAL_SECTIONS } from '../../tutorial/index.ts'
 import { isSectionComplete, loadProgress, nextIncompleteSection, persistProgress } from '../../tutorial/progress.ts'
 import {
-  advanceSession,
   closeSession,
-  retreatSession,
   resumeSession,
   sectionCircuit,
   settleSession,
@@ -33,6 +34,28 @@ type Drag =
   | { kind: 'wire'; from: string; startX: number; startY: number; x: number; y: number; pending?: Wire }
 
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value))
+
+// Puzzle stages accept any wiring, but the palette stays focused on the parts
+// that can reasonably express the required behavior.
+const PUZZLE_PALETTE = new Set([
+  'not',
+  'buffer',
+  'and',
+  'nand',
+  'or',
+  'nor',
+  'xor',
+  'xnor',
+  'and3',
+  'or3',
+  'nand3',
+  'nor3',
+  'xor3',
+  'full-adder',
+  'mux2',
+  'decoder2to4',
+  'd-flip-flop',
+])
 
 interface UiSectionProps {
   focusSectionId?: string
@@ -50,6 +73,7 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
   const [sim, setSim] = useState<Sim>(() => createSim(circuit))
   const [designs, setDesigns] = useState<SavedDesign[]>(() => loadDesigns())
   const [docId, setDocId] = useState<string | null>(null)
+  const [browserOpen, setBrowserOpen] = useState(false)
   const [drag, setDrag] = useState<Drag | null>(null)
   const [selected, setSelected] = useState<Wire | null>(null)
   const [selectedPart, setSelectedPart] = useState<string | null>(null)
@@ -68,19 +92,24 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
 
     const observer = new ResizeObserver(update)
     observer.observe(element)
-    return () => observer.disconnect()
+    observer.observe(document.documentElement)
+    window.addEventListener('resize', update)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', update)
+    }
   }, [])
 
   const activeSection = tutorial.paused
     ? undefined
     : sections.find((section) => section.id === tutorial.sectionId)
   const activeStep = activeSection?.steps[tutorial.stepIndex]
+  const puzzleMode = activeSection?.mode === 'puzzle'
   const baseFeatures = featuresFor(activeSection)
   const features = focusSectionId
     ? { ...baseFeatures, addPorts: false, saveDesign: false, library: false, clearCanvas: false }
     : baseFeatures
   const focusedSection = focusSectionId ? sections[0] : undefined
-  const focusComplete = focusedSection ? isSectionComplete(tutorial.progress, focusedSection) : false
   const resumeSection = tutorial.paused
     ? sections.find((section) => section.id === tutorial.sectionId)
     : nextIncompleteSection(sections, tutorial.progress)
@@ -108,8 +137,6 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
     settleTutorial(next, nextSim)
   }
 
-  const stepForward = () => applySession(advanceSession(sections, tutorial))
-  const stepBack = () => applySession(retreatSession(tutorial))
   const exitTutorial = () => applySession(closeSession(tutorial))
 
   const resumeTutorial = (sectionId: string) => {
@@ -392,10 +419,25 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
 
   const parts = allComponents()
   const selectedPartDef = circuit.parts.find((part) => part.uid === selectedPart)
-  const allowed = activeSection?.components
-  const baseParts = parts.filter(
-    (component) => component.category !== 'custom' && (!allowed || allowed.includes(component.id)),
-  )
+  // Puzzles accept any construction that matches the behavior, so their palette
+  // is not restricted to the gates used by the reference solution.
+  const allowed = activeSection?.mode === 'puzzle' ? undefined : activeSection?.components
+  const preferred = activeSection?.components ?? []
+  const baseParts = parts
+    .filter(
+      (component) =>
+        component.category !== 'custom' &&
+        (!allowed || allowed.includes(component.id)) &&
+        (activeSection?.mode !== 'puzzle' || PUZZLE_PALETTE.has(component.id)),
+    )
+    .sort((left, right) => {
+      const leftIndex = preferred.indexOf(left.id)
+      const rightIndex = preferred.indexOf(right.id)
+      if (leftIndex === -1 && rightIndex === -1) return 0
+      if (leftIndex === -1) return 1
+      if (rightIndex === -1) return -1
+      return leftIndex - rightIndex
+    })
   const builtParts = parts.filter((component) => component.category === 'custom')
   const ghostAnchor = drag?.kind === 'wire' ? anchorOf(circuit, drag.from) : undefined
   const ghost = ghostAnchor && drag?.kind === 'wire' ? { a: ghostAnchor, b: { x: drag.x, y: drag.y } } : null
@@ -403,7 +445,7 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
   return (
     <div
       ref={rootRef}
-      className="select-none p-2 font-mono ink sm:p-3"
+      className={focusSectionId ? 'level-panel-work select-none font-mono ink' : 'select-none p-2 font-mono ink sm:p-3'}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
@@ -415,39 +457,50 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
         empty space and it is removed. Click a part and press Delete to take it off the canvas.
       </p>
 
-      {focusSectionId && !activeSection && focusedSection && !focusComplete && (
+      {focusSectionId && !activeSection && focusedSection && (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border edge-soft px-3 py-2">
-          <p className="text-[10px] amber">Repair procedure paused.</p>
+          <p className="text-[10px] amber">Procedure paused.</p>
           <button type="button" className="btn" onClick={() => resumeTutorial(focusedSection.id)}>
-            Resume repair
+            Resume
           </button>
         </div>
       )}
 
-      {focusSectionId && !activeSection && focusComplete && (
-        <div className="mb-3 border edge-soft px-3 py-2">
-          <p className="text-[10px] phosphor">Procedure complete. Use the procedure rail above to continue.</p>
-        </div>
+      {focusSectionId && activeSection && !puzzleMode && activeStep && (
+        <TutorialPanel
+          section={activeSection}
+          stepIndex={tutorial.stepIndex}
+          onExit={exitTutorial}
+          compact
+        />
+      )}
+
+      {focusSectionId && activeSection && puzzleMode && <PuzzleBrief section={activeSection} />}
+
+      {focusSectionId && activeSection && (
+        <SignalMonitor circuit={circuit} sim={sim} onToggle={toggleInput} />
       )}
 
       <div
-        className={`grid items-start ${
+        className={
           focusSectionId
-            ? 'gap-3 md:grid-cols-[150px_minmax(0,1fr)] lg:grid-cols-[150px_minmax(0,1fr)_190px]'
-            : 'gap-4 md:grid-cols-[180px_minmax(0,1fr)] lg:grid-cols-[180px_minmax(0,1fr)_220px]'
-        }`}
+            ? 'level-bench'
+            : 'grid items-start gap-4 md:grid-cols-[180px_minmax(0,1fr)] lg:grid-cols-[180px_minmax(0,1fr)_220px]'
+        }
       >
         <Palette
           parts={baseParts}
           built={builtParts}
           onStartPart={startPalette}
           onShowDoc={setDocId}
+          onBrowseDocs={() => setBrowserOpen(true)}
           onAddInput={() => addIO('in')}
           onAddOutput={() => addIO('out')}
           onAddClock={addClock}
           allowPorts={features.addPorts}
           allowDocs={features.componentDocs}
           allowLibrary={features.library}
+          compact={Boolean(focusSectionId)}
         />
 
         <div
@@ -458,7 +511,7 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
             setSelected(null)
             setSelectedPart(null)
           }}
-          className="canvas-grid relative w-full overflow-hidden border edge-soft"
+          className={`canvas-grid relative w-full overflow-hidden border edge-soft${focusSectionId ? ' level-bench-canvas' : ''}`}
           style={{
             maxWidth: CANVAS_W,
             aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
@@ -549,18 +602,24 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
           allowSave={features.saveDesign}
           allowLibrary={features.library}
           allowClear={features.clearCanvas}
+          compact={Boolean(focusSectionId)}
         />
       </div>
 
+      {browserOpen && (
+        <ComponentBrowser
+          onClose={() => setBrowserOpen(false)}
+          onSelectComponent={setDocId}
+          escapeDisabled={Boolean(docId)}
+        />
+      )}
+
       {docId && <ComponentDoc componentId={docId} onClose={() => setDocId(null)} />}
 
-      {activeSection && activeStep && (
+      {!focusSectionId && activeSection && activeStep && (
         <TutorialPanel
           section={activeSection}
           stepIndex={tutorial.stepIndex}
-          completed={tutorial.progress[activeSection.id]?.completed ?? []}
-          onBack={stepBack}
-          onNext={stepForward}
           onExit={exitTutorial}
         />
       )}
@@ -574,7 +633,7 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
         </button>
       )}
 
-      <TutorialOverlay target={activeStep?.target} />
+      {!focusSectionId && !puzzleMode && <TutorialOverlay target={activeStep?.target} />}
 
       {drag?.kind === 'palette' && (
         <div

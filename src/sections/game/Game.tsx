@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import LevelSelect from './LevelSelect.tsx'
 import LevelView from './LevelView.tsx'
-import type { LogMessage } from './Companion.tsx'
 import BootOverlay from './BootOverlay.tsx'
+import TestResetButton from './TestResetButton.tsx'
 import WinOverlay from './WinOverlay.tsx'
 import { SHIP_SYSTEMS, stageById, stageBySection, systemById, systemForStage } from '../../game/ship.ts'
 import {
@@ -19,7 +19,6 @@ import {
   stageComplete,
   stageCount,
   stageStatuses,
-  stagesComplete,
   type CampaignProgress,
 } from '../../game/campaign.ts'
 import { TUTORIAL_SECTIONS } from '../../tutorial/index.ts'
@@ -43,19 +42,6 @@ export default function Game() {
     () => allSystemsOnline(repairedSections, campaign) && !campaign.victorySeen,
   )
   const deckRevealTimer = useRef<number | null>(null)
-  const [messages, setMessages] = useState<LogMessage[]>(() => {
-    if (!campaign.introSeen) return []
-
-    const objective = nextObjective(repairedSections, campaign)
-    return [
-      {
-        id: 1,
-        speaker: 'MIRA',
-        text: objective ? 'Repair authority resumed. The deck plan is yours.' : 'All systems holding. I am still listening.',
-      },
-    ]
-  })
-  const nextMessageId = useRef(10)
   const deckScreenOpen = activeSystemId === null
 
   // The deck blueprint and level view are different heights. Without this,
@@ -77,10 +63,6 @@ export default function Game() {
     )
   }
 
-  const pushMessage = (text: string, tone?: LogMessage['tone']) => {
-    setMessages((current) => [...current, { id: nextMessageId.current++, speaker: 'MIRA', text, ...(tone ? { tone } : {}) }])
-  }
-
   const commitCampaign = (next: CampaignProgress) => {
     setCampaign(next)
     persistCampaign(next)
@@ -100,16 +82,6 @@ export default function Game() {
     commitCampaign(next)
     setBootOpen(false)
     revealDeck()
-
-    const objective = nextObjective(repairedSections, next)
-    if (objective) {
-      pushMessage(
-        `${objective.stage.code} // ${objective.stage.name}: ${objective.stage.brief}`,
-        objective.phase === 'circuit' ? 'alert' : undefined,
-      )
-    } else {
-      pushMessage('All systems are already holding. I kept the channel open.')
-    }
   }
 
   const handleOpenSystem = (systemId: string) => {
@@ -123,10 +95,6 @@ export default function Game() {
     const stage = statuses.find((status) => !status.completed && status.unlocked)?.stage ?? system.stages[system.stages.length - 1]
     setActiveSystemId(system.id)
     setActiveStageId(stage.id)
-    pushMessage(
-      `${stage.code} // ${stage.name}: ${stage.brief}`,
-      stage.kind === 'circuit' ? 'alert' : undefined,
-    )
   }
 
   const handleSelectStage = (stageId: string) => {
@@ -138,10 +106,6 @@ export default function Game() {
 
     setActiveSystemId(system.id)
     setActiveStageId(stage.id)
-    pushMessage(
-      `${stage.code} // ${stage.name}: ${stage.brief}`,
-      stage.kind === 'circuit' ? 'alert' : undefined,
-    )
   }
 
   const handleSectionComplete = (sectionId: string) => {
@@ -157,11 +121,11 @@ export default function Game() {
       markStageRestored(stage.id)
     }
 
-    const index = system.stages.findIndex((candidate) => candidate.id === stage.id)
-    const next = system.stages[index + 1]
-    pushMessage(stage.restored, 'ok')
-
-    if (next) pushMessage(`${next.code} // ${next.name} is mounted. ${next.brief}`)
+    // The final stage is a circuit, so the victory screen must also be able to
+    // follow a panel completion rather than only a firmware completion.
+    if (allSystemsOnline(nextRepaired, campaign)) {
+      setWinOpen(true)
+    }
   }
 
   const handleFirmwareComplete = (stageId: string) => {
@@ -175,24 +139,10 @@ export default function Game() {
 
     const next = markFirmwareStage(campaign, stage.id)
     commitCampaign(next)
-    pushMessage(stage.restored, 'ok')
-
-    if (stagesComplete(system, repairedSections, next)) {
-      pushMessage(system.restored, 'ok')
-    }
 
     if (allSystemsOnline(repairedSections, next)) {
-      pushMessage(
-        `That is all ${SHIP_SYSTEMS.length} systems. The Meridian is holding.`,
-        'ok',
-      )
       setWinOpen(true)
-      return
     }
-
-    const index = system.stages.findIndex((candidate) => candidate.id === stage.id)
-    const nextStage = system.stages[index + 1]
-    if (nextStage) pushMessage(`${nextStage.code} // ${nextStage.name} is mounted. ${nextStage.brief}`)
   }
 
   const handleVictoryClose = () => {
@@ -201,7 +151,6 @@ export default function Game() {
     setActiveSystemId(null)
     setActiveStageId(null)
     revealDeck()
-    pushMessage('I will keep the channel open.', 'ok')
   }
 
   const statuses = SHIP_SYSTEMS.map((system) => {
@@ -225,17 +174,13 @@ export default function Game() {
     activeSystem && activeStage ? isStageUnlocked(activeSystem, activeStage, repairedSections, campaign) : false
 
   return (
-    <div className={`mission-screen min-h-screen ${deckReveal ? 'is-deck-reveal' : ''} ${activeSystem ? '' : 'is-deck-screen'}`}>
+    <div className={`mission-screen min-h-screen ${deckReveal ? 'is-deck-reveal' : ''} ${activeSystem ? 'is-level-screen' : 'is-deck-screen'}`}>
       {activeSystem && activeStage && activeStatus && activeUnlocked ? (
         <LevelView
-          system={activeSystem}
           stage={activeStage}
           stageIndex={activeStageIndex}
           stages={activeStatuses}
           completed={activeStatus.completed}
-          progress={campaign}
-          messages={messages}
-          objective={objective}
           onBack={() => {
             setActiveSystemId(null)
             setActiveStageId(null)
@@ -254,9 +199,12 @@ export default function Game() {
         />
       )}
 
+      {/* TEMPORARY: remove with TestResetButton after playtesting. */}
+      <TestResetButton />
+
       {bootOpen && <BootOverlay onBegin={handleBegin} />}
       {winOpen && <WinOverlay onClose={handleVictoryClose} />}
-      <CrtOverlay />
+      {!activeSystem && <CrtOverlay />}
     </div>
   )
 }

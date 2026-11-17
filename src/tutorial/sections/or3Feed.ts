@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, inputLow, outputDriven, outputHigh, outputLow, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -7,8 +8,20 @@ export const or3FeedSection: TutorialSection = {
   id: 'logic-or3',
   title: 'Three-way reactor feed',
   summary: 'Keep a reactor bus alive when any one of three coolant pumps is running.',
+  objective: 'y = a OR b OR c',
+  mode: 'puzzle',
+  goal: logicGoal(['a', 'b', 'c'], 'y', (a, b, c) => a || b || c),
   components: ['or3'],
-  start: environment().input('a').input('b').input('c').output('y').build(),
+  start: environment()
+    .input('a')
+    .input('b')
+    .input('c')
+    .output('y')
+    .place('or', { as: 'partial', x: 300, y: 120 })
+    .wire('in:a', 'partial.a')
+    .wire('in:b', 'partial.b')
+    .wire('partial.y', 'out:y')
+    .build(),
   steps: [
     {
       id: 'place-or3',

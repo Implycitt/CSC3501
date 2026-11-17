@@ -7,6 +7,7 @@ export const andWindowSection: TutorialSection = {
   id: 'logic-and-window',
   title: 'The pressure window',
   summary: 'Combine a live signal with an inverted lockout.',
+  objective: 'y = arm AND NOT fault',
   components: ['not', 'and'],
   start: environment()
     .input('arm')
@@ -26,15 +27,15 @@ export const andWindowSection: TutorialSection = {
     {
       id: 'wire-inverted-fault',
       title: 'Bring in the inverted fault',
-      body: 'Drag from the NOT gate output to one input of the AND gate. The fault line is now inverted before it reaches the interlock.',
-      hint: 'The NOT output is the small handle on the right side of the NOT gate.',
+      body: 'Drag from the NOT gate output to the lower input (b) of the AND gate. The fault line is now inverted before it reaches the interlock.',
+      hint: 'The NOT output is the small handle on the right side of the NOT gate. Use the AND gate lower input b; the arm line will take the upper input a.',
       target: target.canvas,
       done: partDrivenBy('and', 'b', 'not', 'y'),
     },
     {
       id: 'wire-arm',
       title: 'Wire the arm line',
-      body: 'Connect arm to the other input of the AND gate. The window should only open when the bay is armed.',
+      body: 'Connect arm to the upper input (a) of the AND gate. The window should only open when the bay is armed.',
       target: target.canvas,
       done: portDriven('and', 'a'),
     },
@@ -55,11 +56,11 @@ export const andWindowSection: TutorialSection = {
     },
     {
       id: 'fault-closes-window',
-      title: 'Assert the fault line',
-      body: 'Switch fault on. The NOT gate goes low, so the AND gate closes and y goes dark even though the bay is armed.',
+      title: 'Assert a fault while armed',
+      body: 'Keep arm on and switch fault on. The NOT gate goes low, so the AND gate closes and y goes dark even though the bay is armed.',
       hint: 'This is why the inversion matters: a fault has to veto the window, not enable it.',
       target: target.canvas,
-      done: allOf(inputHigh('fault'), outputLow('y')),
+      done: allOf(inputHigh('arm'), inputHigh('fault'), outputLow('y')),
     },
   ],
 }

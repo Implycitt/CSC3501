@@ -86,6 +86,19 @@ export function markStepComplete(
   }
 }
 
+export function markSectionComplete(
+  progress: TutorialProgress,
+  section: TutorialSection,
+): TutorialProgress {
+  return {
+    ...progress,
+    [section.id]: {
+      completed: [...new Set([...(progress[section.id]?.completed ?? []), ...section.steps.map((step) => step.id)])],
+      finishedAt: progress[section.id]?.finishedAt ?? Date.now(),
+    },
+  }
+}
+
 export function resetSection(progress: TutorialProgress, sectionId: string): TutorialProgress {
   const next = { ...progress }
   delete next[sectionId]

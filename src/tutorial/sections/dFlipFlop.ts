@@ -17,6 +17,23 @@ export const dFlipFlopSection: TutorialSection = {
   id: 'memory-d-flip-flop',
   title: 'The D flip-flop',
   summary: 'Store one bit and release it on a clock edge.',
+  objective: 'q = the last d captured on Tick clock',
+  mode: 'puzzle',
+  goal: {
+    inputs: ['d', 'clk'],
+    outputs: ['q'],
+    requiredTicks: 1,
+    traces: [
+      {
+        name: 'capture and hold',
+        steps: [
+          { inputs: { d: true }, tick: true, outputs: { q: true } },
+          { inputs: { d: false }, outputs: { q: true } },
+          { inputs: { d: false }, tick: true, outputs: { q: false } },
+        ],
+      },
+    ],
+  },
   components: ['d-flip-flop'],
   features: { addPorts: false },
   start: environment().input('d').clock().output('q').build(),

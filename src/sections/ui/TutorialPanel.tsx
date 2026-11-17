@@ -3,27 +3,56 @@ import type { TutorialSection } from '../../tutorial/types.ts'
 interface TutorialPanelProps {
   section: TutorialSection
   stepIndex: number
-  completed: string[]
-  onBack: () => void
-  onNext: () => void
   onExit: () => void
+  compact?: boolean
 }
 
-export default function TutorialPanel({ section, stepIndex, completed, onBack, onNext, onExit }: TutorialPanelProps) {
+export default function TutorialPanel({ section, stepIndex, onExit, compact = false }: TutorialPanelProps) {
   const step = section.steps[stepIndex]
   if (!step) return null
 
-  const last = stepIndex === section.steps.length - 1
-  const done = section.steps.filter((candidate) => completed.includes(candidate.id)).length
+  if (compact) {
+    return (
+      <section aria-live="polite" className="procedure-strip">
+        <div className="procedure-strip-head">
+          <div>
+            <p className="level-unit-kind">Procedure · {section.title}</p>
+            <h2>{step.title}</h2>
+          </div>
+          <span className="procedure-count">
+            {stepIndex + 1} / {section.steps.length}
+          </span>
+        </div>
+        {section.objective && (
+          <p className="procedure-objective">
+            <span>Goal</span>
+            {section.objective}
+          </p>
+        )}
+        <p className="procedure-copy">{step.body}</p>
+        {step.hint && (
+          <details className="procedure-hint">
+            <summary>Hint</summary>
+            <p>{step.hint}</p>
+          </details>
+        )}
+        <div className="procedure-bars" aria-hidden="true">
+          {section.steps.map((candidate, index) => (
+            <span key={candidate.id} className={index <= stepIndex ? 'is-done' : ''} />
+          ))}
+        </div>
+      </section>
+    )
+  }
 
   return (
     <aside
       aria-live="polite"
-      className="fixed bottom-4 right-4 z-50 max-h-[calc(100vh-2rem)] w-[min(24rem,calc(100vw-2rem))] space-y-2 overflow-y-auto border edge bg-[var(--palette-surface)] p-3 font-mono text-xs ink"
+      className="fixed bottom-4 right-4 z-50 max-h-[calc(100vh-2rem)] w-[min(22rem,calc(100vw-2rem))] space-y-2 overflow-y-auto border edge bg-[var(--palette-surface)] p-3 font-mono text-xs ink"
     >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[10px] uppercase tracking-widest ink-dim">Repair procedure · {section.title}</p>
+          <p className="text-[10px] uppercase tracking-widest ink-dim">Procedure · {section.title}</p>
           <h2 className="text-sm ink-strong">{step.title}</h2>
         </div>
         <button
@@ -37,29 +66,33 @@ export default function TutorialPanel({ section, stepIndex, completed, onBack, o
         </button>
       </div>
 
+      {section.objective && (
+        <p className="border-l-2 line pl-2 text-[10px] ink-soft">
+          <span className="mr-1 uppercase tracking-widest ink-faint">Goal</span>
+          {section.objective}
+        </p>
+      )}
+
       <p className="leading-relaxed">{step.body}</p>
-      {step.hint && <p className="border-l-2 line pl-2 text-[11px] ink-dim">{step.hint}</p>}
 
-      <div className="flex gap-1" aria-hidden="true">
-        {section.steps.map((candidate, index) => (
-          <span
-            key={candidate.id}
-            className={`h-1 flex-1 ${index <= stepIndex ? 'live-fill' : 'surface-track'}`}
-          />
-        ))}
-      </div>
+      {step.hint && (
+        <details className="border-l-2 line pl-2 text-[11px] ink-dim">
+          <summary className="cursor-pointer select-none">Hint</summary>
+          <p className="mt-1 leading-relaxed">{step.hint}</p>
+        </details>
+      )}
 
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] ink-faint">
-          Step {stepIndex + 1} of {section.steps.length} · {done} done
+      <div className="flex items-center gap-2">
+        <span className="shrink-0 text-[10px] ink-faint">
+          Step {stepIndex + 1} / {section.steps.length}
         </span>
-        <div className="flex gap-1">
-          <button type="button" className="btn" disabled={stepIndex === 0} onClick={onBack}>
-            Back
-          </button>
-          <button type="button" className="btn" onClick={onNext}>
-            {last ? 'Log repair' : 'Next'}
-          </button>
+        <div className="flex flex-1 gap-1" aria-hidden="true">
+          {section.steps.map((candidate, index) => (
+            <span
+              key={candidate.id}
+              className={`h-1 flex-1 ${index <= stepIndex ? 'live-fill' : 'surface-track'}`}
+            />
+          ))}
         </div>
       </div>
     </aside>

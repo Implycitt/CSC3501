@@ -57,8 +57,7 @@ export default function BootOverlay({ onBegin }: BootOverlayProps) {
           </p>
           <p className="mt-2">
             <strong>{SHIP_INTELLIGENCE}:</strong> “{SHIP_SYSTEMS.length} systems are dark. Open Life
-            Support from the deck plan. Each deck runs four procedures: a gate circuit, its firmware, a
-            combined circuit, then the integrated firmware.”
+            Support from the deck plan. Each deck runs a short chain of panel and firmware procedures.”
           </p>
         </div>
 

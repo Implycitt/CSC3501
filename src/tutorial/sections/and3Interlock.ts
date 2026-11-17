@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, inputLow, outputDriven, outputHigh, outputLow, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -7,8 +8,20 @@ export const and3InterlockSection: TutorialSection = {
   id: 'logic-and3',
   title: 'Reactor interlock',
   summary: 'Allow the reactor to spin up only when all three safeties agree.',
+  objective: 'y = a AND b AND c',
+  mode: 'puzzle',
+  goal: logicGoal(['a', 'b', 'c'], 'y', (a, b, c) => a && b && c),
   components: ['and3'],
-  start: environment().input('a').input('b').input('c').output('y').build(),
+  start: environment()
+    .input('a')
+    .input('b')
+    .input('c')
+    .output('y')
+    .place('and', { as: 'partial', x: 300, y: 120 })
+    .wire('in:a', 'partial.a')
+    .wire('in:b', 'partial.b')
+    .wire('partial.y', 'out:y')
+    .build(),
   steps: [
     {
       id: 'place-and3',

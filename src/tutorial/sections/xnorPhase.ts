@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, inputLow, outputDriven, outputHigh, outputLow, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -7,8 +8,19 @@ export const xnorPhaseSection: TutorialSection = {
   id: 'logic-xnor',
   title: 'Phase match',
   summary: 'Confirm a sensor lock only when both phase lines agree.',
+  objective: 'y = NOT (a XOR b)',
+  mode: 'puzzle',
+  goal: logicGoal(['a', 'b'], 'y', (a, b) => a === b),
   components: ['xnor'],
-  start: environment().input('a').input('b').output('y').build(),
+  start: environment()
+    .input('a')
+    .input('b')
+    .output('y')
+    .place('xor', { as: 'wrong', x: 300, y: 120 })
+    .wire('in:a', 'wrong.a')
+    .wire('in:b', 'wrong.b')
+    .wire('wrong.y', 'out:y')
+    .build(),
   steps: [
     {
       id: 'place-xnor',
