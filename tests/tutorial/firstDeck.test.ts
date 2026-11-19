@@ -31,7 +31,7 @@ describe('first deck playthrough', () => {
     run.wire('in:b', 'part:g1:b')
     expect(run.session.stepIndex).toBe(2)
     run.wire('part:g1:y', 'out:y')
-    expect(run.session.stepIndex).toBe(3)
+    expect(run.session.stepIndex).toBe(2)
 
     run.set('a', true)
     expect(run.session.sectionId).toBe('intro-and')
@@ -49,7 +49,7 @@ describe('first deck playthrough', () => {
     run.wire('in:b', 'part:g1:b')
     expect(run.session.stepIndex).toBe(2)
     run.wire('part:g1:y', 'out:y')
-    expect(run.session.stepIndex).toBe(3)
+    expect(run.session.stepIndex).toBe(2)
 
     run.set('a', true)
     expect(run.session.sectionId).toBeNull()
@@ -59,14 +59,14 @@ describe('first deck playthrough', () => {
     const run = play('intro-not')
 
     run.place('not', 'g1')
-    expect(run.session.stepIndex).toBe(1)
+    expect(run.session.stepIndex).toBe(0)
     run.wire('in:a', 'part:g1:a')
-    expect(run.session.stepIndex).toBe(1)
+    expect(run.session.stepIndex).toBe(0)
     run.wire('part:g1:y', 'out:y')
-    expect(run.session.stepIndex).toBe(2)
+    expect(run.session.stepIndex).toBe(1)
 
     run.set('a', true)
-    expect(run.session.stepIndex).toBe(3)
+    expect(run.session.stepIndex).toBe(2)
     run.set('a', false)
     expect(run.session.sectionId).toBeNull()
   })
@@ -98,7 +98,7 @@ describe('first deck playthrough', () => {
     const lss06 = taskById('lss-02')
     if (!lss04 || !lss06) throw new Error('missing first-deck firmware tasks')
 
-    expectFirmwareAccepted('lss-01', lss04.starter.replace('mov ax, bx', 'and ax, bx'))
+    expectFirmwareAccepted('lss-01', lss04.starter.replace('mov ax, bx', 'and ax, bx\nmov [0x40], ax'))
     expectFirmwareAccepted('lss-02', lss06.starter.replace('not bx\nand ax, bx', 'not cx\nand ax, cx'))
   })
 })

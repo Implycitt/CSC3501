@@ -6,12 +6,12 @@ import type { TutorialSection } from '../types.ts'
 
 export const notGateSection: TutorialSection = {
   id: 'logic-not',
-  title: 'The NOT gate',
-  summary: 'Invert a single signal and watch the output do the opposite.',
-  objective: 'y = NOT a',
+  title: 'Carrier recovery',
+  summary: 'The carrier is following the lockdown line instead of opposing it. The band cannot open while the lockdown is asserted.',
+  objective: 'y is the opposite of a; high only when a is low.',
   mode: 'puzzle',
   goal: logicGoal(['a'], 'y', (a) => !a),
-  components: ['not'],
+  components: ['not', 'buffer'],
   start: environment()
     .input('a')
     .output('y')
@@ -22,38 +22,37 @@ export const notGateSection: TutorialSection = {
   steps: [
     {
       id: 'place-not',
-      title: 'Place a NOT gate',
-      body: 'This lesson keeps things small: one part, one input and one output. Drag NOT Gate onto the grid.',
-      hint: 'Everything else in the interface is switched off so there is nothing to undo.',
+      title: 'Restore the inversion',
+      body: 'The carrier is following the lockdown instead of opposing it. Replace the pass-through stage with one that inverts it.',
       target: target.paletteItem('not'),
       done: placed('not'),
     },
     {
       id: 'drive-a',
-      title: 'Wire the input',
-      body: 'Drag from a to the input port of the gate.',
+      title: 'Feed the lockdown line',
+      body: 'Connect a to the replacement gate input.',
       target: target.canvas,
       done: portDriven('not', 'a'),
     },
     {
       id: 'drive-y',
-      title: 'Wire the output',
-      body: 'Drag from the gate output to y.',
+      title: 'Restore the carrier',
+      body: 'Connect the replacement output to y. A low lockdown should produce a high carrier.',
       target: target.canvas,
       done: outputDriven('y'),
     },
     {
       id: 'invert-on',
-      title: 'Switch a on',
-      body: 'Click a. The gate inverts its input, so y stays dark while a is on.',
-      hint: 'That is the whole job of a NOT gate: the output is the opposite of the input.',
+      title: 'Locked down',
+      body: 'Switch a on. The carrier should stay dark because the lockdown is asserted.',
+      hint: 'That is the whole job of an inverter: the output is the opposite of the input.',
       target: target.canvas,
       done: allOf(inputHigh('a'), outputLow('y')),
     },
     {
       id: 'invert-off',
-      title: 'Switch a off',
-      body: 'Click a again. With the input low, y lights up.',
+      title: 'Band open',
+      body: 'Switch a off. The carrier should go high.',
       target: target.canvas,
       done: allOf(inputLow('a'), outputHigh('y')),
     },

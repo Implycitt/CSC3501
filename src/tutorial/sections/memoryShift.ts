@@ -19,7 +19,7 @@ export const memoryShiftSection: TutorialSection = {
   id: 'memory-shift',
   title: 'The shift cell',
   summary: 'Chain two latch stages so one bit moves through them on each clock edge.',
-  objective: 'push one bit through q0, then q1, on each Tick clock',
+  objective: 'push one bit through q0, then q1, on each clock tick',
   mode: 'puzzle',
   goal: {
     inputs: ['d', 'clk'],
@@ -39,7 +39,6 @@ export const memoryShiftSection: TutorialSection = {
     ],
   },
   components: ['d-flip-flop'],
-  features: { addPorts: false },
   start: environment().input('d').clock().output('q0').output('q1').build(),
   steps: [
     {
@@ -89,14 +88,14 @@ export const memoryShiftSection: TutorialSection = {
     {
       id: 'first-edge',
       title: 'Shift the first edge',
-      body: 'Tick the clock once. The first stage captures 1, so q0 lights. The second stage still sees the old zero and q1 stays dark.',
+      body: 'Press Tick in the live signal strip once. The first stage captures 1, so q0 lights. The second stage still sees the old zero and q1 stays dark.',
       target: target.simulation,
       done: allOf(clockTicks(1), outputHigh('q0'), outputLow('q1')),
     },
     {
       id: 'second-edge',
       title: 'Shift the bit forward',
-      body: 'Tick again. The first stage keeps 1 and the second stage captures it, so both q0 and q1 are lit.',
+      body: 'Press Tick again. The first stage keeps 1 and the second stage captures it, so both q0 and q1 are lit.',
       target: target.simulation,
       done: allOf(clockTicks(2), outputHigh('q0'), outputHigh('q1')),
     },
@@ -110,7 +109,7 @@ export const memoryShiftSection: TutorialSection = {
     {
       id: 'third-edge',
       title: 'Push zero into the chain',
-      body: 'Tick once more. Zero enters the first stage while the old 1 moves into the second, so q0 goes dark and q1 stays lit.',
+      body: 'Press Tick once more. Zero enters the first stage while the old 1 moves into the second, so q0 goes dark and q1 stays lit.',
       hint: 'This is a shift register: the bits walk one stage per clock edge.',
       target: target.simulation,
       done: allOf(clockTicks(3), outputLow('q0'), outputHigh('q1')),

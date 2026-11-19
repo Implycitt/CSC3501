@@ -2,18 +2,27 @@ import { useState } from 'react'
 import { taskById } from '../../terminal/tasks.ts'
 import { assemble, runCases, type CaseResult } from '../../terminal/x86.ts'
 import type { SystemStage } from '../../game/ship.ts'
-import TerminalManual from './TerminalManual.tsx'
+import type { ManualTab } from './FieldManual.tsx'
+import ManualLink from '../ManualLink.tsx'
+import {
+  manualLabel,
+  manualSectionForCodeHint,
+  manualSectionForError,
+  manualSectionForFailure,
+} from '../manualLinks.ts'
 
 interface TerminalConsoleProps {
   stage: SystemStage
   onComplete: (stageId: string) => void
+  onFirstFail?: (stageId: string) => void
+  onOpenManual?: (tab: ManualTab, section?: string) => void
 }
 
-export default function TerminalConsole({ stage, onComplete }: TerminalConsoleProps) {
+export default function TerminalConsole({ stage, onComplete, onFirstFail, onOpenManual }: TerminalConsoleProps) {
   const [draft, setDraft] = useState<string | null>(null)
   const [results, setResults] = useState<CaseResult[] | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [manualOpen, setManualOpen] = useState(false)
+  const [hasFailed, setHasFailed] = useState(false)
 
   const task = taskById(stage.taskId ?? '') ?? null
   const code = draft ?? task?.starter ?? ''
@@ -22,6 +31,13 @@ export default function TerminalConsole({ stage, onComplete }: TerminalConsolePr
     setDraft(null)
     setResults(null)
     setError(null)
+    setHasFailed(false)
+  }
+
+  const registerFailure = () => {
+    if (hasFailed) return
+    setHasFailed(true)
+    onFirstFail?.(stage.id)
   }
 
   const runTask = () => {
@@ -32,14 +48,23 @@ export default function TerminalConsole({ stage, onComplete }: TerminalConsolePr
       const next = runCases(program, task.tests)
       setResults(next)
       setError(null)
-      if (next.every((result) => result.passed)) onComplete(stage.id)
+      if (next.every((result) => result.passed)) {
+        onComplete(stage.id)
+      } else {
+        registerFailure()
+      }
     } catch (caught) {
       setResults(null)
       setError(caught instanceof Error ? caught.message : String(caught))
+      registerFailure()
     }
   }
 
   const allPassed = results !== null && results.every((result) => result.passed)
+  const firstFailedIndex = results?.findIndex((result) => !result.passed) ?? -1
+  const failedSection = manualSectionForFailure(
+    firstFailedIndex >= 0 ? results?.[firstFailedIndex]?.detail : undefined,
+  )
 
   const formatRegs = (regs?: Partial<Record<string, number>>) =>
     regs
@@ -72,6 +97,7 @@ export default function TerminalConsole({ stage, onComplete }: TerminalConsolePr
 
   return (
     <div className="terminal-console">
+      <div className="terminal-main">
       <div className="terminal-brief">
         <div className="terminal-brief-head">
           <span>Work order · {stage.code}</span>
@@ -89,36 +115,20 @@ export default function TerminalConsole({ stage, onComplete }: TerminalConsolePr
           </ul>
         </div>
 
-        {task.walkthrough && (
-          <ol className="terminal-walkthrough">
-            {task.walkthrough.map((step, index) => (
-              <li key={step}>
-                <b>{String(index + 1).padStart(2, '0')}</b>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
+        {hasFailed && task.walkthrough && (
+          <details className="terminal-walkthrough">
+            <summary>Walkthrough</summary>
+            <ol>
+              {task.walkthrough.map((step, index) => (
+                <li key={step}>
+                  <b>{String(index + 1).padStart(2, '0')}</b>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          </details>
         )}
 
-        <details className="terminal-tests">
-          <summary>
-            Test cases · {task.tests.length} <span>inputs → required result</span>
-          </summary>
-          <div className="terminal-test-list">
-            {task.tests.map((test, index) => (
-              <div key={test.name}>
-                <span className="terminal-test-name">
-                  {String(index + 1).padStart(2, '0')} · {test.name}
-                </span>
-                <code>
-                  {formatSetup(test.setup)} → {formatExpectation(test.expect)}
-                </code>
-              </div>
-            ))}
-          </div>
-        </details>
-
-        <p className="terminal-acceptance">Any image that passes every case is accepted.</p>
       </div>
 
       <div className="terminal-editor">
@@ -144,7 +154,12 @@ export default function TerminalConsole({ stage, onComplete }: TerminalConsolePr
       </div>
 
       <div aria-live="polite" className="terminal-output">
-        {error && <p className="ink-danger">{error}</p>}
+        {error && (
+          <>
+            <p className="ink-danger">{error}</p>
+            <ManualLink section={manualSectionForError(error)} onOpen={onOpenManual} />
+          </>
+        )}
         {results && (
           <>
             <p className={allPassed ? 'phosphor' : 'ink-danger'}>
@@ -156,6 +171,11 @@ export default function TerminalConsole({ stage, onComplete }: TerminalConsolePr
                 {result.detail ? ` · ${result.detail}` : ''}
               </p>
             ))}
+            {!allPassed && firstFailedIndex >= 0 && (
+              <ManualLink section={failedSection} onOpen={onOpenManual}>
+                Case {String(firstFailedIndex + 1).padStart(2, '0')} failed · Manual · {manualLabel(failedSection)} →
+              </ManualLink>
+            )}
           </>
         )}
         {!error && !results && <p className="terminal-ready">READY · ctrl+enter to assemble</p>}
@@ -165,11 +185,19 @@ export default function TerminalConsole({ stage, onComplete }: TerminalConsolePr
         <div className="terminal-help">
           <details className="terminal-hint">
             <summary>Hint</summary>
-            <p>{task.hint}</p>
+            <p>{task.conceptHint ?? task.hint}</p>
+            <ManualLink
+              section={manualSectionForCodeHint(task.conceptHint ?? task.hint)}
+              onOpen={onOpenManual}
+            />
           </details>
-          <button type="button" className="terminal-manual-button" onClick={() => setManualOpen(true)}>
-            Manual
-          </button>
+          {hasFailed && (
+            <details className="terminal-hint">
+              <summary>Exact hint</summary>
+              <p>{task.hint}</p>
+              <ManualLink section={manualSectionForCodeHint(task.hint)} onOpen={onOpenManual} />
+            </details>
+          )}
         </div>
         <div className="terminal-buttons">
           <button type="button" className="btn" onClick={resetSource}>
@@ -180,8 +208,29 @@ export default function TerminalConsole({ stage, onComplete }: TerminalConsolePr
           </button>
         </div>
       </div>
+      </div>
 
-      {manualOpen && <TerminalManual onClose={() => setManualOpen(false)} />}
+      <aside className="terminal-tests-rail" aria-label="Expected test cases">
+        <div className="terminal-tests-rail-head">
+          <span>Expected tests</span>
+          <span>{task.tests.length} cases</span>
+        </div>
+        <ol className="terminal-test-rail-list">
+          {task.tests.map((test, index) => (
+            <li key={`${test.name}-${index}`}>
+              <span className="terminal-test-rail-name">
+                {String(index + 1).padStart(2, '0')} · {test.name}
+              </span>
+              <code>
+                <span>{formatSetup(test.setup)}</span>
+                <span className="terminal-test-rail-arrow" aria-hidden="true">→</span>
+                <span>{formatExpectation(test.expect)}</span>
+              </code>
+            </li>
+          ))}
+        </ol>
+        <p className="terminal-acceptance">Any image that passes every case is accepted.</p>
+      </aside>
     </div>
   )
 }

@@ -15,26 +15,26 @@ interface PaletteProps {
   parts: ComponentDef[]
   built: ComponentDef[]
   onStartPart: (componentId: string, e: ReactPointerEvent) => void
+  onAddPart: (componentId: string) => void
   onShowDoc: (componentId: string) => void
   onBrowseDocs: () => void
-  onAddInput: () => void
-  onAddOutput: () => void
-  onAddClock: () => void
-  allowPorts: boolean
   allowDocs: boolean
   allowLibrary: boolean
+  preferred?: string[]
   compact?: boolean
 }
 
 function PaletteItem({
   part,
   onStartPart,
+  onAddPart,
   onShowDoc,
   allowDocs,
   compact = false,
 }: {
   part: ComponentDef
   onStartPart: PaletteProps['onStartPart']
+  onAddPart: PaletteProps['onAddPart']
   onShowDoc: PaletteProps['onShowDoc']
   allowDocs: boolean
   compact?: boolean
@@ -46,29 +46,48 @@ function PaletteItem({
     <div
       data-tutorial={`palette:${part.id}`}
       role={compact ? 'listitem' : undefined}
+      title={compact ? `Drag ${part.name} onto the board, or use +` : undefined}
       onPointerDown={(e) => onStartPart(part.id, e)}
       className={
         compact
-          ? 'palette-chip flex shrink-0 cursor-grab items-center gap-1.5 border edge py-1 pl-1.5 pr-2 edge-hover'
+          ? 'palette-chip flex shrink-0 cursor-grab items-center gap-1 border edge py-1 pl-1.5 pr-2 edge-hover'
           : 'flex cursor-grab items-center justify-between gap-1 border edge py-1 pl-1.5 pr-2 edge-hover'
       }
     >
-      <span className="flex min-w-0 items-center gap-2">
+      <span className={compact ? 'palette-chip-main flex min-w-0 flex-1 items-center gap-2' : 'flex min-w-0 items-center gap-2'}>
         <PartGlyph glyph={skin.glyph} image={skin.image} className={`accent-ink h-3 w-5 shrink-0 ${accent}`} />
-        <span className="truncate">{part.name}</span>
+        <span className={compact ? 'palette-chip-name truncate' : 'truncate'}>{part.name}</span>
       </span>
-      {allowDocs && (
-        <button
-          type="button"
-          aria-label={`About ${part.name}`}
-          title={`About ${part.name}`}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => onShowDoc(part.id)}
-          className="shrink-0 px-1 ink-faint hover-ink"
-        >
-          ?
-        </button>
-      )}
+
+      <span className="palette-chip-actions flex shrink-0 items-center">
+        {compact && (
+          <button
+            type="button"
+            aria-label={`Add ${part.name} to the board`}
+            title={`Add ${part.name} to the board`}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              onAddPart(part.id)
+            }}
+            className="palette-add"
+          >
+            +
+          </button>
+        )}
+        {allowDocs && (
+          <button
+            type="button"
+            aria-label={`About ${part.name}`}
+            title={`About ${part.name}`}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => onShowDoc(part.id)}
+            className="palette-doc shrink-0 ink-faint hover-ink"
+          >
+            ?
+          </button>
+        )}
+      </span>
     </div>
   )
 }
@@ -77,37 +96,101 @@ export default function Palette({
   parts,
   built,
   onStartPart,
+  onAddPart,
   onShowDoc,
   onBrowseDocs,
-  onAddInput,
-  onAddOutput,
-  onAddClock,
-  allowPorts,
   allowDocs,
   allowLibrary,
+  preferred = [],
   compact = false,
 }: PaletteProps) {
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()
   const visible = (part: ComponentDef) => part.name.toLowerCase().includes(needle)
+  const partsMatches = parts.filter(visible)
   const builtMatches = built.filter(visible)
+  const total = parts.length + built.length
 
   if (compact) {
+    const suggested = new Set(preferred)
+    const grouped = GROUPS.map((group) => ({
+      ...group,
+      parts: partsMatches.filter((part) => part.category === group.category),
+    }))
+      .filter((group) => group.parts.length > 0)
+      .sort(
+        (left, right) =>
+          Number(right.parts.some((part) => suggested.has(part.id))) -
+          Number(left.parts.some((part) => suggested.has(part.id))),
+      )
+    const empty = grouped.length === 0 && builtMatches.length === 0
+
     return (
       <div data-tutorial="palette" className="palette-rail">
-        <span className="palette-rail-label">Parts</span>
+        <span className="palette-rail-label">
+          Parts
+          <em>{total} · drag or tap +</em>
+        </span>
+
+        {total > 8 && (
+          <input
+            type="search"
+            className="palette-rail-search"
+            aria-label="Filter available parts"
+            placeholder="Filter parts"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        )}
+
         <div className="palette-rail-list" role="list" aria-label="Available parts">
-          {parts.map((part) => (
-            <PaletteItem
-              key={part.id}
-              part={part}
-              onStartPart={onStartPart}
-              onShowDoc={onShowDoc}
-              allowDocs={allowDocs}
-              compact
-            />
+          {grouped.map((group) => (
+            <div key={group.category} className="palette-group" role="presentation">
+              <span className={`palette-group-label ${accentClass(group.category)}`}>
+                {group.label}
+                <em>{group.parts.length}</em>
+              </span>
+              <div className="palette-group-list" role="presentation">
+                {group.parts.map((part) => (
+                  <PaletteItem
+                    key={part.id}
+                    part={part}
+                    onStartPart={onStartPart}
+                    onAddPart={onAddPart}
+                    onShowDoc={onShowDoc}
+                    allowDocs={allowDocs}
+                    compact
+                  />
+                ))}
+              </div>
+            </div>
           ))}
+
+          {allowLibrary && builtMatches.length > 0 && (
+            <div className="palette-group" role="presentation">
+              <span className={`palette-group-label ${accentClass('custom')}`}>
+                Built
+                <em>{builtMatches.length}</em>
+              </span>
+              <div className="palette-group-list" role="presentation">
+                {builtMatches.map((part) => (
+                  <PaletteItem
+                    key={part.id}
+                    part={part}
+                    onStartPart={onStartPart}
+                    onAddPart={onAddPart}
+                    onShowDoc={onShowDoc}
+                    allowDocs={allowDocs}
+                    compact
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+
+        {empty && <p className="palette-empty">No parts match “{query.trim()}”.</p>}
+
         {allowDocs && (
           <button
             type="button"
@@ -153,6 +236,7 @@ export default function Palette({
                   key={part.id}
                   part={part}
                   onStartPart={onStartPart}
+                  onAddPart={onAddPart}
                   onShowDoc={onShowDoc}
                   allowDocs={allowDocs}
                 />
@@ -170,6 +254,7 @@ export default function Palette({
                 key={part.id}
                 part={part}
                 onStartPart={onStartPart}
+                onAddPart={onAddPart}
                 onShowDoc={onShowDoc}
                 allowDocs={allowDocs}
               />
@@ -178,20 +263,6 @@ export default function Palette({
         )}
       </div>
 
-      {allowPorts && (
-        <section data-tutorial="ports" className="shrink-0 space-y-1 border-t line pt-3">
-          <h2 className="ink-strong">Ports</h2>
-          <button className={`btn block w-full`} onClick={onAddInput}>
-            Add input
-          </button>
-          <button className={`btn block w-full`} onClick={onAddOutput}>
-            Add output
-          </button>
-          <button className={`btn block w-full`} onClick={onAddClock}>
-            Add clock
-          </button>
-        </section>
-      )}
     </aside>
   )
 }

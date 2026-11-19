@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, inputLow, outputDriven, outputHigh, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -8,9 +9,9 @@ export const introOrSection: TutorialSection = {
   title: 'The OR gate',
   summary: 'Either relay can keep the return feed alive.',
   objective: 'y = a OR b',
+  goal: logicGoal(['a', 'b'], 'y', (a, b) => a || b),
   components: ['or'],
   features: {
-    addPorts: false,
     saveDesign: false,
     library: false,
     clearCanvas: false,
@@ -34,17 +35,10 @@ export const introOrSection: TutorialSection = {
     },
     {
       id: 'wire-output',
-      title: 'Wire the feed',
-      body: 'Connect the gate output to y.',
-      target: target.canvas,
-      done: outputDriven('y'),
-    },
-    {
-      id: 'either-on',
       title: 'Run on one relay',
-      body: 'Switch a on and leave b off. The feed stays live because one relay is enough.',
+      body: 'Connect the gate output to y, then switch a on and leave b off. The feed stays live because one relay is enough.',
       target: target.canvas,
-      done: allOf(inputHigh('a'), inputLow('b'), outputHigh('y')),
+      done: allOf(outputDriven('y'), inputHigh('a'), inputLow('b'), outputHigh('y')),
     },
   ],
 }

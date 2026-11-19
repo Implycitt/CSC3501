@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { Objective } from '../../game/campaign.ts'
+import type { ChapterId } from '../../game/narrative.ts'
 import { SHIP_INTELLIGENCE } from '../../game/ship.ts'
 
 export interface LogMessage {
@@ -7,12 +8,12 @@ export interface LogMessage {
   speaker: 'MIRA' | 'SYSTEM'
   text: string
   tone?: 'normal' | 'alert' | 'ok'
+  chapterId?: ChapterId
 }
 
 interface CompanionProps {
   messages: LogMessage[]
   objective: Objective | null
-  compact?: boolean
 }
 
 function MiraWave() {
@@ -26,34 +27,13 @@ function MiraWave() {
   )
 }
 
-export default function Companion({ messages, objective, compact = false }: CompanionProps) {
+export default function Companion({ messages, objective }: CompanionProps) {
   const logRef = useRef<HTMLDivElement>(null)
-  const latest = messages[messages.length - 1]
 
   useEffect(() => {
-    if (compact) return
     const element = logRef.current
     if (element) element.scrollTop = element.scrollHeight
-  }, [messages.length, compact])
-
-  if (compact) {
-    return (
-      <section className="companion-strip">
-        <span className="companion-id">
-          <MiraWave />
-          {SHIP_INTELLIGENCE}
-        </span>
-        <span className="companion-copy">
-          {latest?.text ?? `${SHIP_INTELLIGENCE} is listening.`}
-        </span>
-        {objective && (
-          <span className="companion-objective">
-            {objective.stage.code} // {objective.phase}
-          </span>
-        )}
-      </section>
-    )
-  }
+  }, [messages.length])
 
   return (
     <section className="mission-panel companion-panel">

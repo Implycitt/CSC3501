@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { Objective, StageStatus, SystemPhase } from '../../game/campaign.ts'
+import type { Chapter } from '../../game/narrative.ts'
 import { SHIP_NAME, type ShipSystem } from '../../game/ship.ts'
 import ShipBlueprint from './ShipBlueprint.tsx'
+import MiraChannel from './MiraChannel.tsx'
+import type { LogMessage } from './Companion.tsx'
 
 interface SystemStatus {
   system: ShipSystem
@@ -16,6 +19,14 @@ interface LevelSelectProps {
   statuses: SystemStatus[]
   objective: Objective | null
   restoredStageIds: readonly string[]
+  chapter: Chapter | null
+  messages: LogMessage[]
+  logUnreadCount: number
+  logRecoveredCount: number
+  onOpenLog: () => void
+  onOpenManual: () => void
+  showManualCue: boolean
+  onDismissManualCue: () => void
   onSelectSystem: (systemId: string) => void
   onSelectStage: (stageId: string) => void
 }
@@ -176,6 +187,14 @@ export default function LevelSelect({
   statuses,
   objective,
   restoredStageIds,
+  chapter,
+  messages,
+  logUnreadCount,
+  logRecoveredCount,
+  onOpenLog,
+  onOpenManual,
+  showManualCue,
+  onDismissManualCue,
   onSelectSystem,
   onSelectStage,
 }: LevelSelectProps) {
@@ -194,6 +213,9 @@ export default function LevelSelect({
     currentRailStatus?.stages.some(
       (stageStatus) => stageStatus.completed && restoredStageIds.includes(stageStatus.stage.id),
     ) ?? false
+  const chapterStatus = chapter
+    ? statuses.find((status) => status.system.id === chapter.systemId)
+    : undefined
 
   useEffect(() => {
     let frame = 0
@@ -296,6 +318,15 @@ export default function LevelSelect({
   return (
     <div className="deck-select">
       <h1 className="sr-only">{SHIP_NAME} deck select</h1>
+      <MiraChannel
+        chapter={chapter}
+        message={messages.length > 0 ? messages[messages.length - 1] : null}
+        completed={chapterStatus?.completed ?? 0}
+        total={chapterStatus?.total ?? 0}
+        recovered={logRecoveredCount}
+        unreadCount={logUnreadCount}
+        onOpenLog={onOpenLog}
+      />
       <div
         className="deck-stage"
         ref={stageRef}
@@ -406,6 +437,31 @@ export default function LevelSelect({
           })}
         </div>
       </nav>
+
+      <div className="deck-manual-tools">
+        {showManualCue && (
+          <aside className="deck-manual-cue" aria-label="Field manual introduction">
+            <div className="deck-manual-cue-head">
+              <span>New reference</span>
+              <button
+                type="button"
+                className="deck-manual-cue-close"
+                onClick={onDismissManualCue}
+                aria-label="Dismiss manual introduction"
+              >
+                ×
+              </button>
+            </div>
+            <p>
+              Open the field manual for code and circuit reference. It stays available here and in every stage header.
+            </p>
+          </aside>
+        )}
+        <button type="button" className="deck-manual-button" onClick={onOpenManual}>
+          <span>Manual</span>
+          <span>Code / circuits</span>
+        </button>
+      </div>
     </div>
   )
 }

@@ -6,12 +6,12 @@ import type { TutorialSection } from '../types.ts'
 
 export const orGateSection: TutorialSection = {
   id: 'logic-or',
-  title: 'The OR gate',
-  summary: 'Find out how little it takes to turn an OR gate on.',
-  objective: 'y = a OR b',
+  title: 'Gyro bus',
+  summary: 'The helm only answers when both gyro buses are live. Restore a rule that tolerates either bus.',
+  objective: 'y is high when either gyro bus is high; low only when both are low.',
   mode: 'puzzle',
   goal: logicGoal(['a', 'b'], 'y', (a, b) => a || b),
-  components: ['or'],
+  components: ['or', 'and'],
   start: environment()
     .input('a')
     .input('b')
@@ -24,37 +24,37 @@ export const orGateSection: TutorialSection = {
   steps: [
     {
       id: 'place-or',
-      title: 'Place an OR gate',
-      body: 'Drop an OR gate on the grid. Same layout as the AND lesson: inputs on the left, output on the right.',
+      title: 'Restore either-bus steering',
+      body: 'The helm is only answering when both gyro buses agree. Remove the gate that requires agreement and give the bus a rule that stays live when either input is live.',
       target: target.paletteItem('or'),
       done: placed('or'),
     },
     {
       id: 'drive-a',
-      title: 'Wire input a',
-      body: 'Drag from a to the upper input of the gate.',
+      title: 'Feed the first gyro',
+      body: 'Connect bus a to one input of the replacement gate.',
       target: target.canvas,
       done: portDriven('or', 'a'),
     },
     {
       id: 'drive-b',
-      title: 'Wire input b',
-      body: 'Drag from b to the lower input of the gate.',
+      title: 'Feed the second gyro',
+      body: 'Connect bus b to the other input. Either bus should be able to carry the helm alone.',
       target: target.canvas,
       done: portDriven('or', 'b'),
     },
     {
       id: 'drive-y',
-      title: 'Wire the output',
-      body: 'Connect the gate output to y.',
+      title: 'Restore the helm feed',
+      body: 'Connect the replacement gate output to y. The old rule can stay on the bench; it must not drive the helm.',
       target: target.canvas,
       done: outputDriven('y'),
     },
     {
       id: 'one-is-enough',
-      title: 'One input is enough',
-      body: 'Switch a on and leave b off. y lights up. An OR gate only needs one input on, which is exactly how it differs from AND.',
-      hint: 'Switch b on too and y stays on; switch both off and it goes dark.',
+      title: 'Prove one bus is enough',
+      body: 'Switch a on and leave b off. The helm should answer. Then try b alone; either bus should keep y live, and both off should drop it.',
+      hint: 'If y stays dark with one bus live, the old AND rule is still driving the output.',
       target: target.canvas,
       done: allOf(inputHigh('a'), outputHigh('y')),
     },

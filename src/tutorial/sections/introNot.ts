@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, inputLow, outputDriven, outputHigh, outputLow, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -8,9 +9,9 @@ export const introNotSection: TutorialSection = {
   title: 'The NOT gate',
   summary: 'Invert the fault line so a clear vent can open.',
   objective: 'y = NOT a',
+  goal: logicGoal(['a'], 'y', (a) => !a),
   components: ['not'],
   features: {
-    addPorts: false,
     saveDesign: false,
     library: false,
     clearCanvas: false,
@@ -20,17 +21,10 @@ export const introNotSection: TutorialSection = {
   steps: [
     {
       id: 'place-not',
-      title: 'Place the NOT gate',
-      body: 'The vent lockout is wired backwards. Drop a NOT gate between the fault input and the output.',
+      title: 'Restore the inverter',
+      body: 'The vent lockout is wired backwards. Drop a NOT gate between the fault input and the output, then connect a to its input and the gate output to y.',
       target: target.paletteItem('not'),
-      done: placed('not'),
-    },
-    {
-      id: 'wire-gate',
-      title: 'Wire the lockout',
-      body: 'Connect a to the gate input and the gate output to y.',
-      target: target.canvas,
-      done: allOf(portDriven('not', 'a'), outputDriven('y')),
+      done: allOf(placed('not'), portDriven('not', 'a'), outputDriven('y')),
     },
     {
       id: 'fault-live',

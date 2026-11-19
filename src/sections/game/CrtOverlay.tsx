@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 const WARP_MAP_SIZE = 256
 const WARP_FILTER_ID = 'crt-screen-warp'
+const CONTENT_FILTER_ID = 'crt-content-warp'
 const LENS_MAP_SIZE = 192
 const LENS_FILTER_ID = 'crt-pointer-lens'
 const LENS_SIZE = 240
@@ -210,12 +211,28 @@ function supportsBackdropWarp(): boolean {
   )
 }
 
+// The displacement is in CSS pixels, so a fixed scale makes the effect look
+// violent in a narrow preview pane and almost invisible on a wide monitor.
+function displacementScale(): number {
+  if (typeof window === 'undefined') return 96
+  return Math.round(Math.min(120, Math.max(56, Math.min(window.innerWidth, window.innerHeight) * 0.14)))
+}
+
 export default function CrtOverlay() {
   const shaderRef = useRef<HTMLCanvasElement>(null)
   const lensRef = useRef<HTMLDivElement>(null)
   const [warpMap] = useState(createWarpMap)
   const [lensMap] = useState(createLensMap)
+  const [warpScale] = useState(displacementScale)
   const [warpActive] = useState(() => Boolean(warpMap) && supportsBackdropWarp())
+
+  // Browsers without SVG backdrop filters (WebKit, Firefox) still get a CRT
+  // bend on the deck drawing through a regular SVG filter.
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.toggle('crt-fallback', !warpActive)
+    return () => root.classList.remove('crt-fallback')
+  }, [warpActive])
 
   useEffect(() => {
     const lens = lensRef.current
@@ -384,7 +401,26 @@ export default function CrtOverlay() {
             <feDisplacementMap
               in="SourceGraphic"
               in2="warp-map"
-              scale="100"
+              scale={warpScale}
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+          <filter
+            id={CONTENT_FILTER_ID}
+            x="-5%"
+            y="-5%"
+            width="110%"
+            height="110%"
+            colorInterpolationFilters="sRGB"
+          >
+            {warpMap && (
+              <feImage href={warpMap} preserveAspectRatio="none" result="content-warp-map" />
+            )}
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="content-warp-map"
+              scale={Math.round(warpScale * 0.45)}
               xChannelSelector="R"
               yChannelSelector="G"
             />

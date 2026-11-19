@@ -20,7 +20,6 @@ export interface TutorialStep {
 }
 
 export interface TutorialFeatures {
-  addPorts: boolean
   saveDesign: boolean
   library: boolean
   clearCanvas: boolean

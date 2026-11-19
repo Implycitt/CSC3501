@@ -17,7 +17,7 @@ export const dFlipFlopSection: TutorialSection = {
   id: 'memory-d-flip-flop',
   title: 'The D flip-flop',
   summary: 'Store one bit and release it on a clock edge.',
-  objective: 'q = the last d captured on Tick clock',
+  objective: 'q = the last d captured on a clock tick',
   mode: 'puzzle',
   goal: {
     inputs: ['d', 'clk'],
@@ -35,7 +35,6 @@ export const dFlipFlopSection: TutorialSection = {
     ],
   },
   components: ['d-flip-flop'],
-  features: { addPorts: false },
   start: environment().input('d').clock().output('q').build(),
   steps: [
     {
@@ -56,7 +55,7 @@ export const dFlipFlopSection: TutorialSection = {
       id: 'wire-clock',
       title: 'Wire the clock',
       body: 'Connect clk to the clock port. Sequential parts only change state on a clock edge.',
-      hint: 'The clock node pulses from the Simulation panel, not from clicking it.',
+      hint: 'Advance the clock with Tick in the live signal strip, or tap the clk node on the board.',
       target: target.canvas,
       done: portDriven('d-flip-flop', 'clk'),
     },
@@ -70,7 +69,7 @@ export const dFlipFlopSection: TutorialSection = {
     {
       id: 'first-tick',
       title: 'Tick with d off',
-      body: 'Press Tick clock in the Simulation panel. The flip-flop captures d, which is off, so q stays dark.',
+      body: 'Press Tick in the live signal strip. The flip-flop captures d, which is off, so q stays dark.',
       target: target.simulation,
       done: allOf(clockTicks(1), outputLow('q')),
     },
@@ -84,7 +83,7 @@ export const dFlipFlopSection: TutorialSection = {
     {
       id: 'capture',
       title: 'Tick again',
-      body: 'Press Tick clock once more. The flip-flop captures the high input and q lights up.',
+      body: 'Press Tick in the live signal strip once more. The flip-flop captures the high input and q lights up.',
       target: target.simulation,
       done: allOf(clockTicks(2), outputHigh('q')),
     },
@@ -99,7 +98,7 @@ export const dFlipFlopSection: TutorialSection = {
     {
       id: 'release',
       title: 'Tick once more',
-      body: 'Press Tick clock. Now the flip-flop captures the low input and q goes dark.',
+      body: 'Press Tick in the live signal strip. Now the flip-flop captures the low input and q goes dark.',
       target: target.simulation,
       done: allOf(clockTicks(3), outputLow('q')),
     },

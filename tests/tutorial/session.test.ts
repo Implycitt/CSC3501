@@ -221,7 +221,6 @@ describe('resumeSession', () => {
 describe('featuresFor', () => {
   test('enables everything by default', () => {
     expect(featuresFor(undefined)).toEqual({
-      addPorts: true,
       saveDesign: true,
       library: true,
       clearCanvas: true,
@@ -230,8 +229,7 @@ describe('featuresFor', () => {
   })
 
   test('applies section overrides only', () => {
-    expect(featuresFor(lesson({ features: { addPorts: false, library: false } }))).toEqual({
-      addPorts: false,
+    expect(featuresFor(lesson({ features: { library: false } }))).toEqual({
       saveDesign: true,
       library: false,
       clearCanvas: true,

@@ -10,11 +10,8 @@ interface IoNodeProps {
   position: Point
   lit: boolean
   value: boolean | undefined
-  clock: boolean
   onMove: (key: string, e: ReactPointerEvent) => void
   onWire: (key: string, e: ReactPointerEvent) => void
-  onRemove: (kind: 'in' | 'out', name: string) => void
-  onToggle: (name: string) => void
 }
 
 export default function IoNode({
@@ -23,60 +20,22 @@ export default function IoNode({
   position,
   lit,
   value,
-  clock,
   onMove,
   onWire,
-  onRemove,
-  onToggle,
 }: IoNodeProps) {
   const key = `${kind}:${name}`
+  const type = kind === 'in' ? 'Input' : 'Output'
 
   return (
     <div
       data-node={key}
       onPointerDown={(e) => onMove(key, e)}
-      className="absolute flex cursor-move items-center border edge surface"
+      className={`io-node absolute flex cursor-move items-center justify-center${lit ? ' is-high' : ''}`}
       style={{ left: position.x, top: position.y, width: IO_W, height: IO_H }}
+      title={`${type} ${name} is ${bit(value)}. Drag to move.`}
+      aria-label={`${type} ${name} is ${bit(value)}. Drag to move.`}
     >
-      {kind === 'in' && (
-        <span
-          className="grip h-full w-2.5 shrink-0 cursor-move border-r line surface-sunk"
-          title="Drag to move"
-        />
-      )}
-
-      {kind === 'out' ? (
-        <span className="flex-1 truncate px-2 text-xs">
-          {name} {bit(value)}
-        </span>
-      ) : clock ? (
-        <span className="flex-1 truncate px-2 text-xs">clk</span>
-      ) : (
-        <button
-          className="flex-1 truncate px-2 text-left text-xs"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => onToggle(name)}
-          title="Toggle this input"
-        >
-          {name} {bit(value)}
-        </button>
-      )}
-
-      <button
-        className="flex h-full w-5 items-center justify-center ink-faint hover-ink"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => onRemove(kind, name)}
-        title={`Remove this ${kind === 'in' ? 'input' : 'output'}`}
-      >
-        ×
-      </button>
-
-      {kind === 'out' && (
-        <span
-          className="grip h-full w-2.5 shrink-0 cursor-move border-l line surface-sunk"
-          title="Drag to move"
-        />
-      )}
+      <span className="io-node-name">{name}</span>
 
       <div
         data-port={key}

@@ -5,7 +5,7 @@ import { featuresFor } from '../../src/tutorial/features.ts'
 import { TUTORIAL_SECTIONS } from '../../src/tutorial/index.ts'
 import { harness } from './harness.ts'
 
-const KNOWN_TARGETS = new Set(['palette', 'ports', 'canvas', 'inspector', 'simulation', 'save', 'library', 'clear'])
+const KNOWN_TARGETS = new Set(['palette', 'canvas', 'inspector', 'simulation', 'save', 'library', 'clear'])
 
 const sectionById = (id: string) => {
   const section = TUTORIAL_SECTIONS.find((candidate) => candidate.id === id)
@@ -144,6 +144,5 @@ describe('D flip-flop lesson', () => {
     const section = sectionById('memory-d-flip-flop')
 
     expect(section.start.inputs).toContain('clk')
-    expect(featuresFor(section).addPorts).toBe(false)
   })
 })

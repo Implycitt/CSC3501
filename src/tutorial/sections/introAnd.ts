@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, outputDriven, outputHigh, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -8,9 +9,9 @@ export const introAndSection: TutorialSection = {
   title: 'The AND gate',
   summary: 'Both relays must agree before the scrubber feed opens.',
   objective: 'y = a AND b',
+  goal: logicGoal(['a', 'b'], 'y', (a, b) => a && b),
   components: ['and'],
   features: {
-    addPorts: false,
     saveDesign: false,
     library: false,
     clearCanvas: false,
@@ -36,19 +37,11 @@ export const introAndSection: TutorialSection = {
     },
     {
       id: 'wire-output',
-      title: 'Wire the feed',
-      body: 'Connect the gate output to y.',
-      hint: 'Drag from the output handle on the right side of the gate to the y node.',
-      target: target.canvas,
-      done: outputDriven('y'),
-    },
-    {
-      id: 'both-on',
       title: 'Close the interlock',
-      body: 'Switch a and b on. The feed opens only when both relays are live.',
+      body: 'Connect the gate output to y, then switch both relays on. The feed opens only when both relays are live.',
       hint: 'Click the a and b input nodes on the left edge; their wire values update immediately.',
       target: target.canvas,
-      done: allOf(inputHigh('a'), inputHigh('b'), outputHigh('y')),
+      done: allOf(outputDriven('y'), inputHigh('a'), inputHigh('b'), outputHigh('y')),
     },
   ],
 }

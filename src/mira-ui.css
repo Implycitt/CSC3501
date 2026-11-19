@@ -1,0 +1,567 @@
+/* MIRA presence ----------------------------------------------------------
+   The story layer is deliberately loud: a live channel on the deck plan, a
+   full-width transmission feed on every deck, and a toast for new beats. */
+
+.mira-sigil {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--palette-phosphor-dim);
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 3px, rgb(105 183 182 / 0.09) 3px 4px),
+    var(--palette-terminal);
+  color: var(--palette-phosphor);
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 600;
+  line-height: 1;
+  text-shadow: 0 0 10px rgb(105 183 182 / 0.35);
+  box-shadow:
+    inset 0 0 0 1px #000,
+    3px 3px 0 rgb(0 0 0 / 0.3);
+}
+
+.mira-channel {
+  position: fixed;
+  top: 52px;
+  left: 50%;
+  z-index: 35;
+  display: grid;
+  width: min(1000px, calc(100vw - 28px));
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--palette-edge-soft);
+  border-left: 3px solid var(--palette-phosphor);
+  background:
+    linear-gradient(90deg, rgb(105 183 182 / 0.08), transparent 52%),
+    rgb(5 24 38 / 0.96);
+  box-shadow:
+    inset 0 0 0 1px #000,
+    4px 4px 0 rgb(0 0 0 / 0.35);
+  transform: translateX(-50%);
+  animation: mira-channel-in 420ms steps(3, end) both;
+}
+
+.mira-channel-name {
+  color: var(--palette-phosphor);
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  line-height: 0.9;
+}
+
+.mira-channel-role {
+  margin-top: 3px;
+  color: var(--palette-ink-faint);
+  font-size: 7px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.mira-channel-meta {
+  color: var(--palette-amber);
+  font-size: 7.5px;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.mira-channel-meta span {
+  color: var(--palette-ink-faint);
+}
+
+.mira-channel-copy {
+  display: -webkit-box;
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--palette-ink-strong);
+  font-size: 12.5px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.mira-channel-log {
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+  border: 1px solid var(--palette-amber);
+  background: rgb(214 111 156 / 0.08);
+  padding: 4px 8px;
+  color: var(--palette-amber);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mira-channel-log strong {
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.mira-channel-log:hover {
+  background: var(--palette-amber);
+  color: var(--palette-base);
+}
+
+@media (max-width: 820px) {
+  .mira-channel {
+    top: 46px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px 10px;
+    padding: 8px 10px;
+  }
+
+  .mira-sigil {
+    grid-row: 1;
+    grid-column: 1;
+    width: 34px;
+    height: 34px;
+    font-size: 21px;
+  }
+
+  .mira-channel-id {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .mira-channel-body {
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
+
+  .mira-channel-log {
+    grid-row: 1;
+    grid-column: 3;
+  }
+
+  .mira-channel-name {
+    font-size: 20px;
+  }
+
+  .mira-channel-role {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .mira-channel {
+    width: calc(100vw - 16px);
+  }
+
+  .mira-channel-copy {
+    font-size: 11.5px;
+  }
+}
+
+.mira-toast {
+  position: fixed;
+  bottom: 18px;
+  left: 18px;
+  z-index: 55;
+  width: min(420px, calc(100vw - 36px));
+  padding: 11px 34px 12px 13px;
+  border: 1px solid var(--palette-edge);
+  border-left: 3px solid var(--palette-amber);
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 2px, rgb(105 183 182 / 0.025) 2px 3px),
+    rgb(4 22 38 / 0.97);
+  box-shadow:
+    inset 0 0 0 1px #000,
+    6px 6px 0 rgb(0 0 0 / 0.4);
+  pointer-events: none;
+  animation: mira-toast-in 260ms steps(3, end) both;
+}
+
+.mira-toast-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mira-toast-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--palette-phosphor);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.mira-toast-id i {
+  width: 5px;
+  height: 5px;
+  background: var(--palette-amber);
+  animation: mira-live 1.4s steps(2, end) infinite;
+}
+
+.mira-toast-chapter {
+  color: var(--palette-amber);
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mira-toast-copy {
+  margin-top: 5px;
+  color: var(--palette-ink-strong);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mira-toast-close {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--palette-ink-faint);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1;
+  pointer-events: auto;
+}
+
+.mira-toast-close:hover {
+  border-color: var(--palette-amber);
+  color: var(--palette-amber);
+}
+
+.mira-toast::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--palette-amber), transparent);
+  transform-origin: left center;
+  animation: mira-toast-timer 9.5s linear both;
+}
+
+.mira-boot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--palette-line);
+}
+
+.mira-boot-name {
+  color: var(--palette-phosphor);
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  line-height: 0.9;
+}
+
+.mira-boot-role {
+  margin-top: 3px;
+  color: var(--palette-ink-faint);
+  font-size: 7.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.mira-boot-live {
+  display: inline-flex;
+  margin-left: auto;
+  align-items: center;
+  gap: 5px;
+  color: var(--palette-amber);
+  font-size: 7.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mira-boot-live i {
+  width: 5px;
+  height: 5px;
+  background: var(--palette-amber);
+  animation: mira-live 1.4s steps(2, end) infinite;
+}
+
+.boot-card .mira-quote p:first-child {
+  color: var(--palette-ink-strong);
+  font-size: 13px;
+}
+
+/* Mission intro ---------------------------------------------------------- */
+
+.mission-intro-scrim {
+  z-index: 70;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / 0.16) 2px 3px),
+    rgb(3 14 24 / 0.94);
+}
+
+.mission-intro-card {
+  width: min(680px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  border: 1px solid var(--palette-edge-soft);
+  border-top: 3px solid var(--palette-amber);
+  background:
+    linear-gradient(180deg, rgb(105 183 182 / 0.07), transparent 42%),
+    var(--palette-surface);
+}
+
+.mission-intro-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.mission-intro-source {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mission-intro-name {
+  display: block;
+  color: var(--palette-phosphor);
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 0.9;
+}
+
+.mission-intro-role {
+  display: block;
+  margin-top: 3px;
+  color: var(--palette-ink-faint);
+  font-size: 7.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.mission-intro-chapter {
+  color: var(--palette-amber);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.mission-intro-code {
+  margin-top: 18px;
+  color: var(--palette-amber);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.mission-intro-card h2 {
+  margin-top: 4px;
+  font-size: clamp(26px, 5vw, 40px);
+}
+
+.mission-intro-lines {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mission-intro-lines li {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 10px;
+  border-left: 2px solid var(--palette-line);
+  padding: 2px 0 2px 10px;
+  opacity: 0.5;
+}
+
+.mission-intro-lines li.is-current {
+  border-left-color: var(--palette-amber);
+  opacity: 1;
+  animation: mission-intro-line 220ms steps(2, end) both;
+}
+
+.mission-intro-speaker {
+  padding-top: 4px;
+  color: var(--palette-phosphor-dim);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+.mission-intro-lines p {
+  color: var(--palette-ink-soft);
+  font-size: 14px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.mission-intro-lines li.is-current p {
+  color: var(--palette-ink-strong);
+}
+
+.mission-intro-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-top: 18px;
+  border-top: 1px solid var(--palette-line);
+  padding-top: 10px;
+}
+
+.mission-intro-progress {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.mission-intro-progress i {
+  width: 16px;
+  height: 3px;
+  background: var(--palette-line);
+}
+
+.mission-intro-progress i.is-lit {
+  background: var(--palette-amber);
+}
+
+.mission-intro-count {
+  color: var(--palette-ink-faint);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+
+.mission-intro-skip {
+  margin-left: auto;
+  border: 1px solid var(--palette-line);
+  background: transparent;
+  padding: 4px 8px;
+  color: var(--palette-ink-faint);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mission-intro-skip:hover {
+  border-color: var(--palette-amber);
+  color: var(--palette-amber);
+}
+
+@media (max-width: 560px) {
+  .mission-intro-head {
+    gap: 6px;
+  }
+
+  .mission-intro-chapter {
+    text-align: left;
+  }
+
+  .mission-intro-lines li {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .mission-intro-lines p {
+    font-size: 13px;
+  }
+
+  .mission-intro-skip {
+    margin-left: 0;
+  }
+
+  .mission-intro-foot .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@keyframes mission-intro-line {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Browsers without SVG backdrop filters still get a bend on the deck art. */
+html.crt-fallback .schematic-ship {
+  filter: url(#crt-content-warp);
+}
+
+@keyframes mira-channel-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+    filter: brightness(1.6);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    filter: none;
+  }
+}
+
+@keyframes mira-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mira-toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes mira-live {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mira-channel,
+  .mira-toast,
+  .mira-toast::after,
+  .mira-toast-id i,
+  .mira-boot-live i,
+  .mission-intro-lines li.is-current {
+    animation: none !important;
+  }
+
+  .mira-toast::after {
+    display: none;
+  }
+}

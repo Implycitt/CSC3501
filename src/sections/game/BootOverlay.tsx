@@ -3,6 +3,8 @@ import { SHIP_INTELLIGENCE, SHIP_NAME, SHIP_SYSTEMS } from '../../game/ship.ts'
 
 interface BootOverlayProps {
   onBegin: () => void
+  onOpenManual: () => void
+  showManualCue: boolean
 }
 
 const BOOT_LINES = [
@@ -12,7 +14,7 @@ const BOOT_LINES = [
   ['04', 'repair authority', 'GRANTED'],
 ] as const
 
-export default function BootOverlay({ onBegin }: BootOverlayProps) {
+export default function BootOverlay({ onBegin, onOpenManual, showManualCue }: BootOverlayProps) {
   const [exiting, setExiting] = useState(false)
 
   const handleBegin = () => {
@@ -51,6 +53,20 @@ export default function BootOverlay({ onBegin }: BootOverlayProps) {
           ))}
         </div>
 
+        <div className="mira-boot">
+          <span className="mira-sigil" aria-hidden="true">
+            M
+          </span>
+          <div>
+            <p className="mira-boot-name">{SHIP_INTELLIGENCE}</p>
+            <p className="mira-boot-role">Ship intelligence // 412 days awake</p>
+          </div>
+          <span className="mira-boot-live">
+            <i aria-hidden="true" />
+            Channel open
+          </span>
+        </div>
+
         <div className="mira-quote">
           <p>
             <strong>{SHIP_INTELLIGENCE}:</strong> “You&apos;re awake. Good. The ship isn&apos;t.”
@@ -58,6 +74,9 @@ export default function BootOverlay({ onBegin }: BootOverlayProps) {
           <p className="mt-2">
             <strong>{SHIP_INTELLIGENCE}:</strong> “{SHIP_SYSTEMS.length} systems are dark. Open Life
             Support from the deck plan. Each deck runs a short chain of panel and firmware procedures.”
+          </p>
+          <p className="mt-2">
+            <strong>{SHIP_INTELLIGENCE}:</strong> “I kept the lights on. That was the easy part.”
           </p>
         </div>
 
@@ -69,6 +88,11 @@ export default function BootOverlay({ onBegin }: BootOverlayProps) {
           onClick={handleBegin}
         >
           {exiting ? 'HANDING OFF // DECK CONTROL' : 'BEGIN REPAIR'}
+        </button>
+        <button type="button" className="boot-manual" onClick={onOpenManual} disabled={exiting}>
+          <span>Field manual</span>
+          <span>Code &amp; circuit reference</span>
+          {showManualCue && <strong>New</strong>}
         </button>
       </div>
     </div>

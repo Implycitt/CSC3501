@@ -2,7 +2,23 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { allComponents, builtId, getComponent } from '../../game/registry.ts'
 import { connectWire, EMPTY_CIRCUIT, rekeyCircuit, type Circuit, type PlacedPart, type Wire } from '../../game/circuit.ts'
 import { addDesign, designsUsing, loadDesigns, removeDesign, type SavedDesign } from '../../game/library.ts'
-import { CANVAS_H, CANVAS_W, CLICK_SLOP, HEAD_H, IO_H, IO_W, PART_W, anchorOf, ioPos, partHeight, portsOf, snap } from './geometry.ts'
+import {
+  CANVAS_H,
+  CANVAS_W,
+  CLICK_SLOP,
+  HEAD_H,
+  IO_H,
+  IO_MARGIN,
+  IO_W,
+  PART_W,
+  PART_X_MAX,
+  PART_X_MIN,
+  anchorOf,
+  freePartSpot,
+  ioPos,
+  partHeight,
+  portsOf,
+} from './geometry.ts'
 import { advance, createSim, type Sim } from './simulator.ts'
 import PartShape from './PartShape.tsx'
 import IoNode from './IoNode.tsx'
@@ -14,6 +30,7 @@ import ComponentBrowser from './ComponentBrowser.tsx'
 import TutorialPanel from './TutorialPanel.tsx'
 import TutorialOverlay from './TutorialOverlay.tsx'
 import PuzzleBrief from './PuzzleBrief.tsx'
+import ExpectedTests from './ExpectedTests.tsx'
 import SignalMonitor from './SignalMonitor.tsx'
 import { TUTORIAL_SECTIONS } from '../../tutorial/index.ts'
 import { isSectionComplete, loadProgress, nextIncompleteSection, persistProgress } from '../../tutorial/progress.ts'
@@ -25,13 +42,26 @@ import {
   startSession,
   type TutorialSession,
 } from '../../tutorial/session.ts'
+import type { TutorialSection } from '../../tutorial/types.ts'
 import { featuresFor } from '../../tutorial/features.ts'
+import { clearBenchSnapshot, loadBenchSnapshot, saveBenchSnapshot } from './benchSnapshot.ts'
+import type { ManualTab } from '../game/FieldManual.tsx'
 
 type Drag =
-  | { kind: 'palette'; componentId: string; startX: number; startY: number; x: number; y: number }
+  | {
+      kind: 'palette'
+      componentId: string
+      startX: number
+      startY: number
+      x: number
+      y: number
+      overBoard: boolean
+      boardX: number
+      boardY: number
+    }
   | { kind: 'part'; uid: string; offsetX: number; offsetY: number }
   | { kind: 'io'; key: string; offsetX: number; offsetY: number }
-  | { kind: 'wire'; from: string; startX: number; startY: number; x: number; y: number; pending?: Wire }
+  | { kind: 'wire'; from: string; startX: number; startY: number; x: number; y: number; pending?: Wire; target?: string }
 
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value))
 
@@ -60,17 +90,54 @@ const PUZZLE_PALETTE = new Set([
 interface UiSectionProps {
   focusSectionId?: string
   onSectionComplete?: (sectionId: string) => void
+  onOpenManual?: (tab: ManualTab, section?: string) => void
 }
 
 let nextUid = 1
 
-function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
+const reserveRestoredUids = (circuit: Circuit) => {
+  for (const part of circuit.parts) {
+    const match = /^p(\d+)$/.exec(part.uid)
+    if (match) nextUid = Math.max(nextUid, Number(match[1]) + 1)
+  }
+}
+
+interface InitialBench {
+  tutorial: TutorialSession
+  circuit: Circuit
+  sim: Sim
+}
+
+function initialBench(sections: TutorialSection[], focusSectionId?: string): InitialBench {
+  const progress = loadProgress()
+  const tutorial = startSession(sections, progress)
+  const section = focusSectionId ? sections.find((candidate) => candidate.id === focusSectionId) : undefined
+  const snapshot = section && !isSectionComplete(progress, section) ? loadBenchSnapshot(section.id) : null
+  const circuit = snapshot?.circuit ?? sectionCircuit(sections, tutorial.sectionId ?? focusSectionId ?? null)
+
+  if (snapshot) reserveRestoredUids(circuit)
+  const sim = createSim(circuit)
+  if (!snapshot) return { tutorial, circuit, sim }
+
+  return {
+    tutorial: { ...tutorial, ticks: snapshot.ticks },
+    circuit,
+    sim: {
+      ...sim,
+      values: Object.fromEntries(circuit.inputs.map((name) => [name, snapshot.values[name] === true])),
+      nets: new Map(Object.entries(snapshot.nets)),
+    },
+  }
+}
+
+function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionProps) {
   const sections = focusSectionId
     ? TUTORIAL_SECTIONS.filter((section) => section.id === focusSectionId)
     : TUTORIAL_SECTIONS
-  const [tutorial, setTutorial] = useState<TutorialSession>(() => startSession(sections, loadProgress()))
-  const [circuit, setCircuit] = useState<Circuit>(() => sectionCircuit(sections, tutorial.sectionId ?? focusSectionId ?? null))
-  const [sim, setSim] = useState<Sim>(() => createSim(circuit))
+  const [initial] = useState(() => initialBench(sections, focusSectionId))
+  const [tutorial, setTutorial] = useState<TutorialSession>(initial.tutorial)
+  const [circuit, setCircuit] = useState<Circuit>(initial.circuit)
+  const [sim, setSim] = useState<Sim>(initial.sim)
   const [designs, setDesigns] = useState<SavedDesign[]>(() => loadDesigns())
   const [docId, setDocId] = useState<string | null>(null)
   const [browserOpen, setBrowserOpen] = useState(false)
@@ -107,12 +174,53 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
   const puzzleMode = activeSection?.mode === 'puzzle'
   const baseFeatures = featuresFor(activeSection)
   const features = focusSectionId
-    ? { ...baseFeatures, addPorts: false, saveDesign: false, library: false, clearCanvas: false }
+    ? { ...baseFeatures, saveDesign: false, library: false, clearCanvas: false }
     : baseFeatures
   const focusedSection = focusSectionId ? sections[0] : undefined
+  const sectionComplete = focusedSection ? isSectionComplete(tutorial.progress, focusedSection) : false
   const resumeSection = tutorial.paused
     ? sections.find((section) => section.id === tutorial.sectionId)
     : nextIncompleteSection(sections, tutorial.progress)
+  const benchComplete = useRef(sectionComplete)
+  const latestBench = useRef({ circuit, sim, ticks: tutorial.ticks })
+
+  useEffect(() => {
+    latestBench.current = { circuit, sim, ticks: tutorial.ticks }
+    benchComplete.current = sectionComplete
+  }, [circuit, sim, tutorial.ticks, sectionComplete])
+
+  useEffect(() => {
+    if (!focusSectionId || !focusedSection) return
+    if (sectionComplete) {
+      clearBenchSnapshot(focusSectionId)
+      return
+    }
+
+    const snapshot = {
+      sectionId: focusSectionId,
+      circuit,
+      values: sim.values,
+      nets: Object.fromEntries(sim.nets),
+      ticks: tutorial.ticks,
+    }
+    const timer = window.setTimeout(() => saveBenchSnapshot(snapshot), 180)
+    return () => window.clearTimeout(timer)
+  }, [focusSectionId, focusedSection, sectionComplete, circuit, sim, tutorial.ticks])
+
+  useEffect(() => {
+    return () => {
+      if (!focusSectionId || benchComplete.current) return
+
+      const latest = latestBench.current
+      saveBenchSnapshot({
+        sectionId: focusSectionId,
+        circuit: latest.circuit,
+        values: latest.sim.values,
+        nets: Object.fromEntries(latest.sim.nets),
+        ticks: latest.ticks,
+      })
+    }
+  }, [focusSectionId])
 
   const applySession = (next: TutorialSession) => {
     if (next === tutorial) return
@@ -123,6 +231,8 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
     for (const section of sections) {
       if (isSectionComplete(next.progress, section) && !isSectionComplete(tutorial.progress, section)) {
         onSectionComplete?.(section.id)
+        clearBenchSnapshot(section.id)
+        benchComplete.current = true
       }
     }
   }
@@ -159,7 +269,17 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
 
   const startPalette = (componentId: string, e: ReactPointerEvent) => {
     capture(e)
-    setDrag({ kind: 'palette', componentId, startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY })
+    setDrag({
+      kind: 'palette',
+      componentId,
+      startX: e.clientX,
+      startY: e.clientY,
+      x: e.clientX,
+      y: e.clientY,
+      overBoard: false,
+      boardX: 0,
+      boardY: 0,
+    })
   }
 
   const startPart = (uid: string, e: ReactPointerEvent) => {
@@ -179,6 +299,8 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
 
   const startIO = (key: string, e: ReactPointerEvent) => {
     capture(e)
+    setSelected(null)
+    setSelectedPart(null)
     const base = ioPos(circuit, key)
     const point = canvasPoint(e.clientX, e.clientY)
     setDrag({ kind: 'io', key, offsetX: point.x - base.x, offsetY: point.y - base.y })
@@ -210,7 +332,18 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
     if (!drag) return
 
     if (drag.kind === 'palette') {
-      setDrag({ ...drag, x: e.clientX, y: e.clientY })
+      const rect = canvasRef.current?.getBoundingClientRect()
+      const overBoard =
+        !!rect && e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom
+      const point = overBoard ? canvasPoint(e.clientX, e.clientY) : undefined
+      setDrag({
+        ...drag,
+        x: e.clientX,
+        y: e.clientY,
+        overBoard,
+        boardX: point?.x ?? 0,
+        boardY: point?.y ?? 0,
+      })
       return
     }
 
@@ -219,8 +352,8 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
     if (drag.kind === 'io') {
       const key = drag.key
       const position = {
-        x: clamp(point.x - drag.offsetX, 0, CANVAS_W - IO_W),
-        y: clamp(point.y - drag.offsetY, 0, CANVAS_H - IO_H),
+        x: clamp(point.x - drag.offsetX, IO_MARGIN, CANVAS_W - IO_W - IO_MARGIN),
+        y: clamp(point.y - drag.offsetY, IO_MARGIN, CANVAS_H - IO_H - IO_MARGIN),
       }
       setCircuit((current) => ({ ...current, layout: { ...current.layout, [key]: position } }))
       return
@@ -229,8 +362,8 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
     if (drag.kind === 'part') {
       const { uid, offsetX, offsetY } = drag
       const position = {
-        x: snap(clamp(point.x - offsetX, 0, CANVAS_W - PART_W)),
-        y: snap(clamp(point.y - offsetY, 0, CANVAS_H - HEAD_H)),
+        x: clamp(point.x - offsetX, PART_X_MIN, PART_X_MAX),
+        y: clamp(point.y - offsetY, 0, CANVAS_H - HEAD_H),
       }
       setCircuit((current) => ({
         ...current,
@@ -239,27 +372,34 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
       return
     }
 
+    const target = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-port]')?.dataset.port
+    const wireTarget = target && target !== drag.from ? target : undefined
     const moved = Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) > CLICK_SLOP
     if (drag.pending && moved) {
       const pending = drag.pending
       const from = pending.to === drag.from ? pending.from : drag.from
       commit({ ...circuit, wires: circuit.wires.filter((wire) => wire !== pending) })
-      setDrag({ ...drag, from, x: point.x, y: point.y, pending: undefined })
+      setDrag({ ...drag, from, x: point.x, y: point.y, pending: undefined, target: wireTarget })
       return
     }
 
-    setDrag({ ...drag, x: point.x, y: point.y })
+    setDrag({ ...drag, x: point.x, y: point.y, target: wireTarget })
   }
 
   const addPart = (componentId: string, x: number, y: number) => {
     const part: PlacedPart = {
       uid: `p${nextUid++}`,
       componentId,
-      x: snap(clamp(x, 0, CANVAS_W - PART_W)),
-      y: snap(clamp(y, 0, CANVAS_H - partHeight(componentId))),
+      x: clamp(x, PART_X_MIN, PART_X_MAX),
+      y: clamp(y, 0, CANVAS_H - partHeight(componentId)),
     }
     setSelected(null)
     commit({ ...circuit, parts: [...circuit.parts, part] })
+  }
+
+  const addFromTray = (componentId: string) => {
+    const spot = freePartSpot(circuit, componentId)
+    addPart(componentId, spot.x, spot.y)
   }
 
   const onPointerUp = (e: ReactPointerEvent) => {
@@ -267,15 +407,10 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
     setDrag(null)
 
     if (drag.kind === 'palette') {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      const inside =
-        !!rect && e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom
-
-      if (inside) {
-        const point = canvasPoint(e.clientX, e.clientY)
-        addPart(drag.componentId, point.x - PART_W / 2, point.y - HEAD_H / 2)
+      if (drag.overBoard) {
+        addPart(drag.componentId, drag.boardX - PART_W / 2, drag.boardY - HEAD_H / 2)
       } else if (Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) <= CLICK_SLOP) {
-        addPart(drag.componentId, CANVAS_W / 2 - PART_W / 2 + (circuit.parts.length % 5) * 20, CANVAS_H / 2 - HEAD_H)
+        addFromTray(drag.componentId)
       }
       return
     }
@@ -285,39 +420,6 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
     const target = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-port]')?.dataset.port
     if (target && target !== drag.from) commit(connectWire(circuit, drag.from, target, portsOf))
     setSelected(null)
-  }
-
-  const addIO = (kind: 'in' | 'out') => {
-    const names = kind === 'in' ? circuit.inputs : circuit.outputs
-    let number = names.length + 1
-    while (names.includes(`${kind}${number}`)) number++
-
-    const name = `${kind}${number}`
-    setSelected(null)
-    commit(
-      kind === 'in'
-        ? { ...circuit, inputs: [...circuit.inputs, name] }
-        : { ...circuit, outputs: [...circuit.outputs, name] },
-    )
-  }
-
-  const addClock = () => {
-    if (circuit.inputs.includes('clk')) return
-    commit({ ...circuit, inputs: [...circuit.inputs, 'clk'] })
-  }
-
-  const removeIO = (kind: 'in' | 'out', name: string) => {
-    const key = `${kind}:${name}`
-    const layout = { ...circuit.layout }
-    delete layout[key]
-
-    commit({
-      ...circuit,
-      inputs: kind === 'in' ? circuit.inputs.filter((input) => input !== name) : circuit.inputs,
-      outputs: kind === 'out' ? circuit.outputs.filter((output) => output !== name) : circuit.outputs,
-      wires: circuit.wires.filter((wire) => wire.from !== key && wire.to !== key),
-      layout,
-    })
   }
 
   const removePart = (uid: string) => {
@@ -334,6 +436,23 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
   const removeWire = (wire: Wire) => {
     setSelected(null)
     commit({ ...circuit, wires: circuit.wires.filter((candidate) => candidate !== wire) })
+  }
+
+  const resetBay = () => {
+    if (!focusSectionId || !focusedSection) return
+
+    clearBenchSnapshot(focusSectionId)
+    benchComplete.current = false
+    setDrag(null)
+    setSelected(null)
+    setSelectedPart(null)
+
+    const next = sectionCircuit(sections, focusedSection.id)
+    const nextSim = createSim(next)
+    latestBench.current = { circuit: next, sim: nextSim, ticks: 0 }
+    setCircuit(next)
+    setSim(nextSim)
+    setTutorial((current) => ({ ...current, ticks: 0 }))
   }
 
   const toggleInput = (name: string) => {
@@ -391,6 +510,8 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        if (drag) event.preventDefault()
+        setDrag(null)
         setSelected(null)
         setSelectedPart(null)
         return
@@ -439,20 +560,66 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
       return leftIndex - rightIndex
     })
   const builtParts = parts.filter((component) => component.category === 'custom')
-  const ghostAnchor = drag?.kind === 'wire' ? anchorOf(circuit, drag.from) : undefined
-  const ghost = ghostAnchor && drag?.kind === 'wire' ? { a: ghostAnchor, b: { x: drag.x, y: drag.y } } : null
+  const wireDrag = drag?.kind === 'wire' ? drag : null
+  const wireStart = wireDrag ? anchorOf(circuit, wireDrag.from) : undefined
+  const wireSnap = wireDrag?.target ? anchorOf(circuit, wireDrag.target) : undefined
+  const ghost = wireStart && wireDrag ? { a: wireStart, b: wireSnap ?? { x: wireDrag.x, y: wireDrag.y } } : null
+
+  const paletteDrag = drag?.kind === 'palette' && drag.overBoard ? drag : null
+  const paletteGhost = paletteDrag
+    ? (() => {
+        const height = partHeight(paletteDrag.componentId)
+        return {
+          name: getComponent(paletteDrag.componentId)?.name ?? paletteDrag.componentId,
+          height,
+          x: clamp(paletteDrag.boardX - PART_W / 2, PART_X_MIN, PART_X_MAX),
+          y: clamp(paletteDrag.boardY - HEAD_H / 2, 0, CANVAS_H - height),
+        }
+      })()
+    : null
+
+  const renderInspector = () => (
+    <Inspector
+      circuit={circuit}
+      error={sim.error}
+      selected={selected}
+      nameDraft={nameDraft}
+      status={status}
+      designs={designs}
+      onTick={clockTick}
+      onRemoveWire={removeWire}
+      selectedPart={selectedPartDef ? { name: getComponent(selectedPartDef.componentId)?.name ?? selectedPartDef.componentId } : null}
+      onRemoveSelectedPart={() => selectedPart && removePart(selectedPart)}
+      onDeselect={() => {
+        setSelected(null)
+        setSelectedPart(null)
+      }}
+      onNameDraft={setNameDraft}
+      onSave={saveBuilt}
+      onLoadDesign={loadSaved}
+      onDeleteDesign={deleteSaved}
+      onClear={() => commit(EMPTY_CIRCUIT)}
+      onResetBay={resetBay}
+      onOpenManual={onOpenManual}
+      allowSave={features.saveDesign}
+      allowLibrary={features.library}
+      allowClear={features.clearCanvas}
+      compact={Boolean(focusSectionId)}
+    />
+  )
 
   return (
     <div
       ref={rootRef}
       className={focusSectionId ? 'level-panel-work select-none font-mono ink' : 'select-none p-2 font-mono ink sm:p-3'}
+      data-dragging={drag ? 'true' : undefined}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
       <h1 className={`mb-1 text-lg ink-strong ${focusSectionId ? 'hidden' : ''}`}>Repair bench</h1>
       <p className={`mb-4 max-w-xl text-xs leading-relaxed ink-soft ${focusSectionId ? 'hidden' : ''}`}>
-        Drag a part onto the grid, then drag from one port to another to wire them together. Parts and inputs can both
+        Drag a part onto the board, then drag from one port to another to wire them together. Parts and inputs can both
         be moved by dragging. To change a connection, click the wire and drag one end somewhere else. Drop a wire on
         empty space and it is removed. Click a part and press Delete to take it off the canvas.
       </p>
@@ -466,21 +633,6 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
         </div>
       )}
 
-      {focusSectionId && activeSection && !puzzleMode && activeStep && (
-        <TutorialPanel
-          section={activeSection}
-          stepIndex={tutorial.stepIndex}
-          onExit={exitTutorial}
-          compact
-        />
-      )}
-
-      {focusSectionId && activeSection && puzzleMode && <PuzzleBrief section={activeSection} />}
-
-      {focusSectionId && activeSection && (
-        <SignalMonitor circuit={circuit} sim={sim} onToggle={toggleInput} />
-      )}
-
       <div
         className={
           focusSectionId
@@ -492,33 +644,36 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
           parts={baseParts}
           built={builtParts}
           onStartPart={startPalette}
+          onAddPart={addFromTray}
           onShowDoc={setDocId}
           onBrowseDocs={() => setBrowserOpen(true)}
-          onAddInput={() => addIO('in')}
-          onAddOutput={() => addIO('out')}
-          onAddClock={addClock}
-          allowPorts={features.addPorts}
           allowDocs={features.componentDocs}
           allowLibrary={features.library}
+          preferred={preferred}
           compact={Boolean(focusSectionId)}
         />
 
-        <div
-          ref={canvasRef}
-          data-tutorial="canvas"
-          onPointerDown={(e) => {
-            if ((e.target as HTMLElement).closest('[data-part]')) return
-            setSelected(null)
-            setSelectedPart(null)
-          }}
-          className={`canvas-grid relative w-full overflow-hidden border edge-soft${focusSectionId ? ' level-bench-canvas' : ''}`}
-          style={{
-            maxWidth: CANVAS_W,
-            aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
-          }}
-        >
+        <div className={focusSectionId ? 'level-bench-stage' : 'contents'}>
+          {focusSectionId && (
+            <SignalMonitor circuit={circuit} sim={sim} ticks={tutorial.ticks} onToggle={toggleInput} onTick={clockTick} />
+          )}
+
           <div
-            className="absolute left-0 top-0"
+            ref={canvasRef}
+            data-tutorial="canvas"
+            onPointerDown={(e) => {
+              if ((e.target as HTMLElement).closest('[data-part]')) return
+              setSelected(null)
+              setSelectedPart(null)
+            }}
+            className={`canvas-grid relative w-full overflow-hidden border edge-soft${focusSectionId ? ' level-bench-canvas' : ''}${wireDrag ? ' is-wiring' : ''}${paletteDrag ? ' is-drop-ready' : ''}`}
+            style={{
+              maxWidth: CANVAS_W,
+              aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
+            }}
+          >
+            <div
+              className="absolute left-0 top-0"
             style={{ width: CANVAS_W, height: CANVAS_H, transform: `scale(${scale})`, transformOrigin: 'top left' }}
           >
             <WireLayer
@@ -526,9 +681,21 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
               nets={sim.nets}
               selected={selected}
               ghost={ghost}
+              snapAt={wireSnap}
               onSelect={setSelected}
               onEdit={editWire}
             />
+
+            {paletteGhost && (
+              <div
+                className="part-ghost"
+                style={{ left: paletteGhost.x, top: paletteGhost.y, width: PART_W, height: paletteGhost.height }}
+                aria-hidden="true"
+              >
+                <span className="part-ghost-name">{paletteGhost.name}</span>
+                <span className="part-ghost-note">release to place</span>
+              </div>
+            )}
 
             {circuit.inputs.map((name) => {
               const key = `in:${name}`
@@ -540,11 +707,8 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
                   position={ioPos(circuit, key)}
                   lit={sim.nets.get(name) === true}
                   value={sim.values[name]}
-                  clock={name === 'clk'}
                   onMove={startIO}
                   onWire={startWire}
-                  onRemove={removeIO}
-                  onToggle={toggleInput}
                 />
               )
             })}
@@ -559,11 +723,8 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
                   position={ioPos(circuit, key)}
                   lit={sim.nets.get(name) === true}
                   value={sim.nets.get(name)}
-                  clock={false}
                   onMove={startIO}
                   onWire={startWire}
-                  onRemove={removeIO}
-                  onToggle={toggleInput}
                 />
               )
             })}
@@ -580,30 +741,29 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
                 onRemove={removePart}
               />
             ))}
+            </div>
           </div>
+
         </div>
 
-        <Inspector
-          circuit={circuit}
-          error={sim.error}
-          selected={selected}
-          nameDraft={nameDraft}
-          status={status}
-          designs={designs}
-          onTick={clockTick}
-          onRemoveWire={removeWire}
-          selectedPart={selectedPartDef ? { name: getComponent(selectedPartDef.componentId)?.name ?? selectedPartDef.componentId } : null}
-          onRemoveSelectedPart={() => selectedPart && removePart(selectedPart)}
-          onNameDraft={setNameDraft}
-          onSave={saveBuilt}
-          onLoadDesign={loadSaved}
-          onDeleteDesign={deleteSaved}
-          onClear={() => commit(EMPTY_CIRCUIT)}
-          allowSave={features.saveDesign}
-          allowLibrary={features.library}
-          allowClear={features.clearCanvas}
-          compact={Boolean(focusSectionId)}
-        />
+        {focusSectionId ? (
+          <aside className="level-bench-side" aria-label="Work order and bench controls">
+            {activeSection && <ExpectedTests goal={activeSection.goal} />}
+            {activeSection && !puzzleMode && activeStep && (
+              <TutorialPanel
+                section={activeSection}
+                stepIndex={tutorial.stepIndex}
+                onExit={exitTutorial}
+                onOpenManual={onOpenManual}
+                compact
+              />
+            )}
+            {activeSection && puzzleMode && <PuzzleBrief section={activeSection} />}
+            {renderInspector()}
+          </aside>
+        ) : (
+          renderInspector()
+        )}
       </div>
 
       {browserOpen && (
@@ -621,6 +781,7 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
           section={activeSection}
           stepIndex={tutorial.stepIndex}
           onExit={exitTutorial}
+          onOpenManual={onOpenManual}
         />
       )}
 
@@ -635,12 +796,11 @@ function Build({ focusSectionId, onSectionComplete }: UiSectionProps) {
 
       {!focusSectionId && !puzzleMode && <TutorialOverlay target={activeStep?.target} />}
 
-      {drag?.kind === 'palette' && (
-        <div
-          className="pointer-events-none fixed border dot-edge surface-deep px-2 py-1 text-xs"
-          style={{ left: drag.x + 12, top: drag.y + 12 }}
-        >
-          {getComponent(drag.componentId)?.name}
+      {drag?.kind === 'palette' && !drag.overBoard && (
+        <div className="palette-drag-chip" style={{ left: drag.x + 14, top: drag.y + 14 }} aria-hidden="true">
+          <span className="palette-drag-plus">+</span>
+          <span>{getComponent(drag.componentId)?.name}</span>
+          <em>drag onto the board</em>
         </div>
       )}
     </div>

@@ -209,11 +209,6 @@ body {
     fill: var(--palette-base);
   }
 
-  .canvas-grid {
-    background-image: radial-gradient(circle, var(--palette-grid) 1px, transparent 1px);
-    background-size: 20px 20px;
-  }
-
   .grip {
     background-image: radial-gradient(circle, var(--palette-grip) 1px, transparent 1px);
     background-size: 4px 4px;
@@ -293,10 +288,7 @@ body {
     background-color: var(--palette-base);
     background-image:
       radial-gradient(circle at 18% 0%, rgb(214 111 156 / 0.08), transparent 42%),
-      radial-gradient(circle at 82% 100%, rgb(51 108 132 / 0.16), transparent 44%),
-      linear-gradient(rgb(51 108 132 / 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(51 108 132 / 0.08) 1px, transparent 1px);
-    background-size: auto, auto, 32px 32px, 32px 32px;
+      radial-gradient(circle at 82% 100%, rgb(51 108 132 / 0.16), transparent 44%);
   }
 
   .crt {
@@ -536,7 +528,6 @@ body {
     --palette-live-ring: rgb(105 183 182 / 0.6);
     --palette-live-halo: rgb(105 183 182 / 0.4);
 
-    --palette-grid: #244457;
     --palette-grip: #5c8494;
     --palette-wire-idle: #5c8494;
     --palette-wire-active: #dff4f2;
@@ -554,10 +545,7 @@ body {
     background-color: var(--palette-base);
     background-image:
       radial-gradient(circle at 28% 12%, rgb(214 111 156 / 0.07), transparent 48%),
-      radial-gradient(circle at 76% 92%, rgb(51 108 132 / 0.12), transparent 56%),
-      linear-gradient(rgb(51 108 132 / 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(51 108 132 / 0.035) 1px, transparent 1px);
-    background-size: auto, 32px 32px, 32px 32px;
+      radial-gradient(circle at 76% 92%, rgb(51 108 132 / 0.12), transparent 56%);
     image-rendering: pixelated;
   }
 

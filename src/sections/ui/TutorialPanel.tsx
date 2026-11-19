@@ -1,13 +1,23 @@
 import type { TutorialSection } from '../../tutorial/types.ts'
+import type { ManualTab } from '../game/FieldManual.tsx'
+import ManualLink from '../ManualLink.tsx'
+import { manualSectionForCircuitHint } from '../manualLinks.ts'
 
 interface TutorialPanelProps {
   section: TutorialSection
   stepIndex: number
   onExit: () => void
+  onOpenManual?: (tab: ManualTab, section?: string) => void
   compact?: boolean
 }
 
-export default function TutorialPanel({ section, stepIndex, onExit, compact = false }: TutorialPanelProps) {
+export default function TutorialPanel({
+  section,
+  stepIndex,
+  onExit,
+  onOpenManual,
+  compact = false,
+}: TutorialPanelProps) {
   const step = section.steps[stepIndex]
   if (!step) return null
 
@@ -34,6 +44,7 @@ export default function TutorialPanel({ section, stepIndex, onExit, compact = fa
           <details className="procedure-hint">
             <summary>Hint</summary>
             <p>{step.hint}</p>
+            <ManualLink section={manualSectionForCircuitHint(step.hint)} onOpen={onOpenManual} />
           </details>
         )}
         <div className="procedure-bars" aria-hidden="true">
@@ -79,6 +90,7 @@ export default function TutorialPanel({ section, stepIndex, onExit, compact = fa
         <details className="border-l-2 line pl-2 text-[11px] ink-dim">
           <summary className="cursor-pointer select-none">Hint</summary>
           <p className="mt-1 leading-relaxed">{step.hint}</p>
+          <ManualLink section={manualSectionForCircuitHint(step.hint)} onOpen={onOpenManual} />
         </details>
       )}
 

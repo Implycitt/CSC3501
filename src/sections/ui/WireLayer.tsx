@@ -6,11 +6,12 @@ interface WireLayerProps {
   nets: Map<string, boolean>
   selected: Wire | null
   ghost: { a: Point; b: Point } | null
+  snapAt?: Point | null
   onSelect: (wire: Wire) => void
   onEdit: (wire: Wire, end: 'from' | 'to', e: { pointerId: number; clientX: number; clientY: number }) => void
 }
 
-export default function WireLayer({ circuit, nets, selected, ghost, onSelect, onEdit }: WireLayerProps) {
+export default function WireLayer({ circuit, nets, selected, ghost, snapAt, onSelect, onEdit }: WireLayerProps) {
   const isHigh = (net: string) => nets.get(net) === true
 
   const grip = (position: Point, end: 'from' | 'to', wire: Wire) => (
@@ -67,6 +68,8 @@ export default function WireLayer({ circuit, nets, selected, ghost, onSelect, on
       {ghost && (
         <path d={wirePath(ghost.a, ghost.b)} fill="none" strokeWidth={2} strokeDasharray="5 4" className="wire-live" />
       )}
+
+      {snapAt && <circle cx={snapAt.x} cy={snapAt.y} r={8} className="wire-snap-ring" />}
     </svg>
   )
 }

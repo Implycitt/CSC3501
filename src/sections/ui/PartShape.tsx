@@ -35,7 +35,9 @@ function PartPort({ portKey, label, side, lit, onWire }: PartPortProps) {
       >
         <PortDot lit={lit} />
       </div>
-      <span className={`absolute top-1/2 -translate-y-1/2 text-[10px] ink-dim ${side === 'left' ? 'left-3' : 'right-3'}`}>
+      <span
+        className={`part-port-label absolute top-1/2 -translate-y-1/2 ${side === 'left' ? 'left-3' : 'right-3'}${lit ? ' is-high' : ''}`}
+      >
         {label}
       </span>
     </>
@@ -58,22 +60,27 @@ export default function PartShape({ part, selected, wires, nets, onMove, onWire,
   const isHigh = (net: string) => nets.get(net) === true
   const skin = skinFor(part.componentId)
   const accent = accentClass(skin.accent)
+  const live = ports?.outputs.some((output) => isHigh(netOf(partKey(part.uid, output)))) ?? false
+  const name = getComponent(part.componentId)?.name ?? part.componentId
 
   return (
     <div
       data-part={part.uid}
+      role="group"
+      aria-label={`${name} part`}
       onPointerDown={(e) => onMove(part.uid, e)}
       className={`part-card absolute cursor-grab border surface active:cursor-grabbing ${accent} ${selected ? 'is-selected' : ''}`}
       style={{ left: part.x, top: part.y, width: PART_W, height: partHeight(part.componentId) }}
     >
       <div className={`part-head flex items-center gap-1.5 border-b line px-1.5 ${accent}`} style={{ height: HEAD_H }}>
         <PartGlyph glyph={skin.glyph} image={skin.image} className={`accent-ink h-4 w-7 shrink-0 ${accent}`} />
-        <span className="truncate text-xs" title={getComponent(part.componentId)?.name ?? part.componentId}>
-          {getComponent(part.componentId)?.name ?? part.componentId}
+        <span className="truncate text-xs" title={name}>
+          {name}
         </span>
+        <i className={`part-lamp${live ? ' is-live' : ''}`} aria-hidden="true" />
         <button
-          className="ml-auto flex h-full w-6 shrink-0 items-center justify-center border-l line text-sm ink-faint hover-ink hover-sunk"
-          aria-label={`Remove ${getComponent(part.componentId)?.name ?? part.componentId}`}
+          className="part-remove flex h-full w-6 shrink-0 items-center justify-center border-l line text-sm ink-faint hover-ink hover-sunk"
+          aria-label={`Remove ${name}`}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => onRemove(part.uid)}
           title="Remove this part (Delete)"
@@ -88,7 +95,7 @@ export default function PartShape({ part, selected, wires, nets, onMove, onWire,
         const driver = input ? wires.find((wire) => wire.to === partKey(part.uid, input)) : undefined
 
         return (
-          <div key={row} className="relative" style={{ height: ROW_H }}>
+          <div key={row} className="part-row relative" style={{ height: ROW_H }}>
             {input && (
               <PartPort
                 portKey={partKey(part.uid, input)}
