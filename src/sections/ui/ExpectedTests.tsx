@@ -4,7 +4,7 @@ interface ExpectedTestsProps {
   goal?: CircuitGoal
 }
 
-const MAX_ROWS = 5
+const MAX_ROWS = 2
 const bit = (value: boolean | undefined) => (value ? '1' : '0')
 
 /** Pick evenly spaced rows so large truth tables show both ends of the range. */
@@ -85,7 +85,7 @@ export default function ExpectedTests({ goal }: ExpectedTestsProps) {
       </div>
       {total > rows.length && (
         <p className="expected-tests-more">
-          Showing {rows.length} of {total} · full table below
+          {rows.length} examples · {total} {noun} checked
         </p>
       )}
     </section>

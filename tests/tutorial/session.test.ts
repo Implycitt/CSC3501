@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { EMPTY_CIRCUIT } from '../../src/game/circuit.ts'
 import { environment } from '../../src/tutorial/environment.ts'
 import { featuresFor } from '../../src/tutorial/features.ts'
+import { logicGoal } from '../../src/tutorial/goals.ts'
 import {
   advanceSession,
   closeSession,
@@ -10,6 +11,7 @@ import {
   sectionCircuit,
   settleSession,
   startSession,
+  submitSession,
 } from '../../src/tutorial/session.ts'
 import type { TutorialSection } from '../../src/tutorial/types.ts'
 
@@ -120,6 +122,52 @@ describe('settleSession', () => {
     const session = { progress: {}, sectionId: null, stepIndex: 0, ticks: 0 }
 
     expect(settleSession([lesson()], session, EMPTY_CIRCUIT, new Map(), 3)).toBe(session)
+  })
+})
+
+describe('submitSession', () => {
+  const andLesson = lesson({ goal: logicGoal(['a', 'b'], 'y', (a, b) => a && b) })
+  const andCircuit = environment()
+    .input('a')
+    .input('b')
+    .output('y')
+    .place('and', { as: 'gate' })
+    .wire('in:a', 'gate.a')
+    .wire('in:b', 'gate.b')
+    .wire('gate.y', 'out:y')
+    .build()
+  const session = { progress: {}, sectionId: 'one', stepIndex: 0, ticks: 0 }
+
+  test('accepts a matching circuit without waiting for step predicates', () => {
+    const submitted = submitSession([andLesson], session, andCircuit)
+
+    expect(submitted.sectionId).toBeNull()
+    expect(submitted.progress.one.completed).toEqual(['a', 'b'])
+    expect(submitted.progress.one.finishedAt).toBeGreaterThan(0)
+  })
+
+  test('leaves the session alone when the circuit does not match', () => {
+    expect(submitSession([andLesson], session, EMPTY_CIRCUIT)).toBe(session)
+  })
+
+  test('waits for the required clock ticks on a trace goal', () => {
+    const clocked = lesson({
+      goal: {
+        inputs: ['a'],
+        outputs: ['y'],
+        requiredTicks: 1,
+        cases: [{ inputs: { a: true }, outputs: { y: false } }],
+      },
+    })
+
+    expect(submitSession([clocked], session, EMPTY_CIRCUIT, 0)).toBe(session)
+    expect(submitSession([clocked], session, EMPTY_CIRCUIT, 1).sectionId).toBeNull()
+  })
+
+  test('ignores a paused session', () => {
+    const paused = { ...session, paused: true }
+
+    expect(submitSession([andLesson], paused, andCircuit)).toBe(paused)
   })
 })
 

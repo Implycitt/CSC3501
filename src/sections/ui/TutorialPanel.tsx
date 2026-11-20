@@ -23,15 +23,12 @@ export default function TutorialPanel({
 
   if (compact) {
     return (
-      <section aria-live="polite" className="procedure-strip">
+      <section className="procedure-strip" aria-label={`Procedure: ${section.title}`}>
         <div className="procedure-strip-head">
           <div>
-            <p className="level-unit-kind">Procedure · {section.title}</p>
-            <h2>{step.title}</h2>
+            <p className="level-unit-kind">Procedure</p>
+            <h2>{section.title}</h2>
           </div>
-          <span className="procedure-count">
-            {stepIndex + 1} / {section.steps.length}
-          </span>
         </div>
         {section.objective && (
           <p className="procedure-objective">
@@ -39,19 +36,8 @@ export default function TutorialPanel({
             {section.objective}
           </p>
         )}
-        <p className="procedure-copy">{step.body}</p>
-        {step.hint && (
-          <details className="procedure-hint">
-            <summary>Hint</summary>
-            <p>{step.hint}</p>
-            <ManualLink section={manualSectionForCircuitHint(step.hint)} onOpen={onOpenManual} />
-          </details>
-        )}
-        <div className="procedure-bars" aria-hidden="true">
-          {section.steps.map((candidate, index) => (
-            <span key={candidate.id} className={index <= stepIndex ? 'is-done' : ''} />
-          ))}
-        </div>
+        <p className="procedure-copy">{section.summary}</p>
+        <p className="procedure-prompt">Work it out from the expected tests below.</p>
       </section>
     )
   }

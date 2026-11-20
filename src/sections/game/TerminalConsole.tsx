@@ -18,6 +18,14 @@ interface TerminalConsoleProps {
   onOpenManual?: (tab: ManualTab, section?: string) => void
 }
 
+const MAX_TEST_ROWS = 2
+
+function sampleIndices(total: number, limit: number): number[] {
+  if (total <= limit) return Array.from({ length: total }, (_, index) => index)
+
+  return Array.from({ length: limit }, (_, index) => Math.round((index * (total - 1)) / (limit - 1)))
+}
+
 export default function TerminalConsole({ stage, onComplete, onFirstFail, onOpenManual }: TerminalConsoleProps) {
   const [draft, setDraft] = useState<string | null>(null)
   const [results, setResults] = useState<CaseResult[] | null>(null)
@@ -95,6 +103,22 @@ export default function TerminalConsole({ stage, onComplete, onFirstFail, onOpen
     )
   }
 
+  const failedTests: { result: CaseResult; index: number }[] = []
+  results?.forEach((result, index) => {
+    if (!result.passed) failedTests.push({ result, index })
+  })
+
+  const displayIndices =
+    failedTests.length > 0
+      ? failedTests.map(({ index }) => index)
+      : sampleIndices(task.tests.length, MAX_TEST_ROWS)
+
+  const shownTests = displayIndices.map((index) => ({
+    test: task.tests[index],
+    index,
+    result: results?.[index],
+  }))
+
   return (
     <div className="terminal-console">
       <div className="terminal-main">
@@ -153,53 +177,47 @@ export default function TerminalConsole({ stage, onComplete, onFirstFail, onOpen
         />
       </div>
 
-      <div aria-live="polite" className="terminal-output">
-        {error && (
-          <>
-            <p className="ink-danger">{error}</p>
-            <ManualLink section={manualSectionForError(error)} onOpen={onOpenManual} />
-          </>
-        )}
-        {results && (
-          <>
-            <p className={allPassed ? 'phosphor' : 'ink-danger'}>
-              {allPassed ? 'ACCEPTED // firmware online' : 'ASSEMBLY REJECTED'}
-            </p>
-            {results.map((result) => (
-              <p key={result.name} className={result.passed ? 'terminal-pass' : 'ink-danger'}>
-                {result.passed ? 'PASS' : 'FAIL'} · {result.name}
-                {result.detail ? ` · ${result.detail}` : ''}
+      {(error || results) && (
+        <div aria-live="polite" className="terminal-output">
+          {error && (
+            <>
+              <p className="ink-danger">{error}</p>
+              <ManualLink section={manualSectionForError(error)} onOpen={onOpenManual} />
+            </>
+          )}
+          {results && (
+            <>
+              <p className={allPassed ? 'phosphor' : 'ink-danger'}>
+                {allPassed ? 'ACCEPTED // firmware online' : 'ASSEMBLY REJECTED'}
               </p>
-            ))}
-            {!allPassed && firstFailedIndex >= 0 && (
-              <ManualLink section={failedSection} onOpen={onOpenManual}>
-                Case {String(firstFailedIndex + 1).padStart(2, '0')} failed · Manual · {manualLabel(failedSection)} →
-              </ManualLink>
-            )}
-          </>
-        )}
-        {!error && !results && <p className="terminal-ready">READY · ctrl+enter to assemble</p>}
-      </div>
-
-      <div className="terminal-actions">
-        <div className="terminal-help">
-          <details className="terminal-hint">
-            <summary>Hint</summary>
-            <p>{task.conceptHint ?? task.hint}</p>
-            <ManualLink
-              section={manualSectionForCodeHint(task.conceptHint ?? task.hint)}
-              onOpen={onOpenManual}
-            />
-          </details>
-          {hasFailed && (
-            <details className="terminal-hint">
-              <summary>Exact hint</summary>
-              <p>{task.hint}</p>
-              <ManualLink section={manualSectionForCodeHint(task.hint)} onOpen={onOpenManual} />
-            </details>
+              {results.map((result) => (
+                <p key={result.name} className={result.passed ? 'terminal-pass' : 'ink-danger'}>
+                  {result.passed ? 'PASS' : 'FAIL'} · {result.name}
+                  {result.detail ? ` · ${result.detail}` : ''}
+                </p>
+              ))}
+              {!allPassed && firstFailedIndex >= 0 && (
+                <ManualLink section={failedSection} onOpen={onOpenManual}>
+                  Case {String(firstFailedIndex + 1).padStart(2, '0')} failed · Manual · {manualLabel(failedSection)} →
+                </ManualLink>
+              )}
+            </>
           )}
         </div>
+      )}
+
+      <div className="terminal-actions">
+        {!error && !results && <p className="terminal-ready">READY · ctrl+enter to assemble</p>}
         <div className="terminal-buttons">
+          {onOpenManual && (
+            <button
+              type="button"
+              className="btn terminal-manual-button"
+              onClick={() => onOpenManual('code')}
+            >
+              Manual
+            </button>
+          )}
           <button type="button" className="btn" onClick={resetSource}>
             Reset
           </button>
@@ -216,20 +234,61 @@ export default function TerminalConsole({ stage, onComplete, onFirstFail, onOpen
           <span>{task.tests.length} cases</span>
         </div>
         <ol className="terminal-test-rail-list">
-          {task.tests.map((test, index) => (
-            <li key={`${test.name}-${index}`}>
-              <span className="terminal-test-rail-name">
-                {String(index + 1).padStart(2, '0')} · {test.name}
+          {shownTests.map(({ test, index, result }) => (
+            <li
+              key={`${test.name}-${index}`}
+              className={result ? (result.passed ? 'is-passed' : 'is-failed') : undefined}
+            >
+              <span className="terminal-test-rail-top">
+                <span className="terminal-test-rail-name">
+                  {String(index + 1).padStart(2, '0')} · {test.name}
+                </span>
+                {result && (
+                  <span className={`terminal-test-rail-verdict ${result.passed ? 'is-pass' : 'is-fail'}`}>
+                    {result.passed ? 'PASS' : 'FAIL'}
+                  </span>
+                )}
               </span>
               <code>
                 <span>{formatSetup(test.setup)}</span>
                 <span className="terminal-test-rail-arrow" aria-hidden="true">→</span>
                 <span>{formatExpectation(test.expect)}</span>
               </code>
+              {result && !result.passed && result.detail && (
+                <p className="terminal-test-rail-result">
+                  <span>Result</span>
+                  {result.detail}
+                </p>
+              )}
             </li>
           ))}
         </ol>
-        <p className="terminal-acceptance">Any image that passes every case is accepted.</p>
+        <div className="terminal-tests-hints">
+          <div className="terminal-hint-stack">
+            <details className="terminal-hint">
+              <summary>Hint</summary>
+              <p>{task.conceptHint ?? task.hint}</p>
+              <ManualLink
+                section={manualSectionForCodeHint(task.conceptHint ?? task.hint)}
+                onOpen={onOpenManual}
+              />
+            </details>
+            {hasFailed && (
+              <details className="terminal-hint">
+                <summary>Exact hint</summary>
+                <p>{task.hint}</p>
+                <ManualLink section={manualSectionForCodeHint(task.hint)} onOpen={onOpenManual} />
+              </details>
+            )}
+          </div>
+        </div>
+        <p className="terminal-acceptance">
+          {failedTests.length > 0
+            ? `${failedTests.length} failed · ${task.tests.length} cases checked`
+            : shownTests.length === task.tests.length
+              ? `All ${task.tests.length} cases shown`
+              : `${shownTests.length} examples · ${task.tests.length} cases checked`}
+        </p>
       </aside>
     </div>
   )

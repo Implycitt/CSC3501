@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { outputDriven, outputHigh, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -7,6 +8,7 @@ export const andGateSection: TutorialSection = {
   id: 'logic-and',
   title: 'The AND gate',
   summary: 'Build a circuit that lights up only when both switches are on.',
+  goal: logicGoal(['a', 'b'], 'y', (a, b) => a && b),
   components: ['and'],
   start: environment().input('a').input('b').output('y').build(),
   steps: [

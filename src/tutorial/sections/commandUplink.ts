@@ -25,7 +25,7 @@ export const commandUplinkSection: TutorialSection = {
   objective: 'y = oddParity(a1,a0,b1,b0) AND feed[s1 s0] AND NOT cout',
   mode: 'puzzle',
   goal: logicGoal(['a1', 'a0', 'b1', 'b0', 'cin'], 'y', commandPermit),
-  components: ['full-adder', 'xor', 'mux2'],
+  components: ['full-adder', 'xor', 'mux2', 'not', 'and3'],
   start: environment()
     .input('a1')
     .input('a0')

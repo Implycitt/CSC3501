@@ -1,4 +1,5 @@
 import { environment } from '../environment.ts'
+import { logicGoal } from '../goals.ts'
 import { allOf, inputHigh, inputLow, outputDriven, outputHigh, outputLow, partDrivenBy, placed, portDriven } from '../predicates.ts'
 import { target } from '../targets.ts'
 import type { TutorialSection } from '../types.ts'
@@ -8,6 +9,7 @@ export const andWindowSection: TutorialSection = {
   title: 'The pressure window',
   summary: 'Combine a live signal with an inverted lockout.',
   objective: 'y = arm AND NOT fault',
+  goal: logicGoal(['arm', 'fault'], 'y', (arm, fault) => arm && !fault),
   components: ['not', 'and'],
   start: environment()
     .input('arm')

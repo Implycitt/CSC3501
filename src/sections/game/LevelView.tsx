@@ -25,19 +25,6 @@ interface LevelViewProps {
 
 const pad = (value: number) => String(value).padStart(2, '0')
 
-function ManualButton({ tab, onOpen }: { tab: ManualTab; onOpen: () => void }) {
-  return (
-    <button
-      type="button"
-      className="level-action"
-      onClick={onOpen}
-      aria-label={tab === 'code' ? 'Open the code manual' : 'Open the circuit manual'}
-    >
-      Manual
-    </button>
-  )
-}
-
 function RepairedState({
   stage,
   next,
@@ -51,23 +38,36 @@ function RepairedState({
 }) {
   return (
     <div className="unit-repaired" role="status" aria-live="polite">
-      <span className="level-complete-stamp">Repaired</span>
-      <p className="unit-repaired-title">{stage.name}</p>
-      <p className="level-complete-copy">{stage.restored}</p>
-      {next ? (
-        <button
-          type="button"
-          className="btn btn-action"
-          disabled={!next.unlocked}
-          onClick={() => onSelectStage(next.stage.id)}
-        >
-          Next: {next.stage.name}
-        </button>
-      ) : (
-        <button type="button" className="btn" onClick={onBack}>
-          Deck plan
-        </button>
-      )}
+      <div className="unit-repaired-card">
+        <span className="level-complete-stamp">
+          <span className="level-complete-mark" aria-hidden="true">
+            ✓
+          </span>
+          Repaired
+        </span>
+        <p className="unit-repaired-title">{stage.name}</p>
+        <p className="level-complete-copy">{stage.restored}</p>
+        <div className="unit-repaired-rule" aria-hidden="true">
+          <span />
+          <b>{stage.code} · Section sealed</b>
+          <span />
+        </div>
+        {next ? (
+          <button
+            type="button"
+            className="btn btn-action unit-repaired-next"
+            disabled={!next.unlocked}
+            onClick={() => onSelectStage(next.stage.id)}
+          >
+            Next: {next.stage.name}
+            <span aria-hidden="true">→</span>
+          </button>
+        ) : (
+          <button type="button" className="btn unit-repaired-next" onClick={onBack}>
+            Deck plan
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -96,7 +96,6 @@ export default function LevelView({
   const hasPanel = Boolean(stage.sectionId)
   const introLines = missionIntroLines(stage.id)
   const introOpen = !completed && introLines.length > 0 && introDismissedFor !== stage.id
-  const terminalState = completed ? 'REPAIRED' : 'ONLINE'
 
   useEffect(() => {
     onStageOpen(stage.id)
@@ -143,14 +142,6 @@ export default function LevelView({
                     <span className="level-unit-code">
                       {stage.code} · {pad(stageIndex + 1)}/{pad(stages.length)}
                     </span>
-                    <span className={`level-unit-state ${completed ? 'is-repaired' : 'is-live'}`}>
-                      <span className="led led-on" aria-hidden="true" />
-                      {terminalState}
-                    </span>
-                    <ManualButton tab="code" onOpen={() => onOpenManual('code')} />
-                    <button type="button" className="level-action" onClick={onBack}>
-                      ‹ Deck plan
-                    </button>
                   </div>
                 </header>
 
@@ -195,15 +186,7 @@ export default function LevelView({
                 <span className="level-unit-code">
                   {stage.code} · {pad(stageIndex + 1)}/{pad(stages.length)}
                 </span>
-                <span className={`level-unit-state ${completed ? 'is-repaired' : 'is-live'}`}>
-                  <span className="led led-on" aria-hidden="true" />
-                  {completed ? 'REPAIRED' : 'POWER ON'}
-                </span>
                 <span className="panel-face-note">Terminal offline</span>
-                <ManualButton tab="circuits" onOpen={() => onOpenManual('circuits')} />
-                <button type="button" className="level-action" onClick={onBack}>
-                  ‹ Deck plan
-                </button>
               </div>
 
               <div className="panel-status-lamps" aria-hidden="true">

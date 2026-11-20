@@ -26,7 +26,6 @@ import WireLayer from './WireLayer.tsx'
 import Palette from './Palette.tsx'
 import Inspector from './Inspector.tsx'
 import ComponentDoc from './ComponentDoc.tsx'
-import ComponentBrowser from './ComponentBrowser.tsx'
 import TutorialPanel from './TutorialPanel.tsx'
 import TutorialOverlay from './TutorialOverlay.tsx'
 import PuzzleBrief from './PuzzleBrief.tsx'
@@ -40,10 +39,12 @@ import {
   sectionCircuit,
   settleSession,
   startSession,
+  submitSession,
   type TutorialSession,
 } from '../../tutorial/session.ts'
 import type { TutorialSection } from '../../tutorial/types.ts'
 import { featuresFor } from '../../tutorial/features.ts'
+import { gateLimitFor } from '../../tutorial/gateLimits.ts'
 import { clearBenchSnapshot, loadBenchSnapshot, saveBenchSnapshot } from './benchSnapshot.ts'
 import type { ManualTab } from '../game/FieldManual.tsx'
 
@@ -64,28 +65,6 @@ type Drag =
   | { kind: 'wire'; from: string; startX: number; startY: number; x: number; y: number; pending?: Wire; target?: string }
 
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value))
-
-// Puzzle stages accept any wiring, but the palette stays focused on the parts
-// that can reasonably express the required behavior.
-const PUZZLE_PALETTE = new Set([
-  'not',
-  'buffer',
-  'and',
-  'nand',
-  'or',
-  'nor',
-  'xor',
-  'xnor',
-  'and3',
-  'or3',
-  'nand3',
-  'nor3',
-  'xor3',
-  'full-adder',
-  'mux2',
-  'decoder2to4',
-  'd-flip-flop',
-])
 
 interface UiSectionProps {
   focusSectionId?: string
@@ -140,12 +119,12 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
   const [sim, setSim] = useState<Sim>(initial.sim)
   const [designs, setDesigns] = useState<SavedDesign[]>(() => loadDesigns())
   const [docId, setDocId] = useState<string | null>(null)
-  const [browserOpen, setBrowserOpen] = useState(false)
   const [drag, setDrag] = useState<Drag | null>(null)
   const [selected, setSelected] = useState<Wire | null>(null)
   const [selectedPart, setSelectedPart] = useState<string | null>(null)
   const [nameDraft, setNameDraft] = useState('')
   const [status, setStatus] = useState('')
+  const [submitNote, setSubmitNote] = useState('')
   const [scale, setScale] = useState(1)
   const rootRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -177,6 +156,7 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
     ? { ...baseFeatures, saveDesign: false, library: false, clearCanvas: false }
     : baseFeatures
   const focusedSection = focusSectionId ? sections[0] : undefined
+  const gateLimit = gateLimitFor(focusedSection)
   const sectionComplete = focusedSection ? isSectionComplete(tutorial.progress, focusedSection) : false
   const resumeSection = tutorial.paused
     ? sections.find((section) => section.id === tutorial.sectionId)
@@ -244,7 +224,8 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
     const nextSim = createSim(next)
     setCircuit(next)
     setSim(nextSim)
-    settleTutorial(next, nextSim)
+    setSubmitNote('')
+    if (!focusSectionId) settleTutorial(next, nextSim)
   }
 
   const exitTutorial = () => applySession(closeSession(tutorial))
@@ -387,6 +368,11 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
   }
 
   const addPart = (componentId: string, x: number, y: number) => {
+    if (gateLimit !== undefined && circuit.parts.length >= gateLimit) {
+      setSubmitNote(`Gate limit reached (${gateLimit}). Remove a gate to try another combination.`)
+      return
+    }
+
     const part: PlacedPart = {
       uid: `p${nextUid++}`,
       componentId,
@@ -452,18 +438,38 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
     latestBench.current = { circuit: next, sim: nextSim, ticks: 0 }
     setCircuit(next)
     setSim(nextSim)
+    setSubmitNote('')
     setTutorial((current) => ({ ...current, ticks: 0 }))
   }
 
   const toggleInput = (name: string) => {
     const next = advance(sim, { ...sim.values, [name]: !sim.values[name] }, false)
     setSim(next)
-    settleTutorial(circuit, next)
+    setSubmitNote('')
+    if (!focusSectionId) settleTutorial(circuit, next)
   }
   const clockTick = () => {
     const next = advance(sim, sim.values, true)
     setSim(next)
-    settleTutorial(circuit, next, tutorial.ticks + 1)
+    setSubmitNote('')
+    if (focusSectionId) {
+      setTutorial((current) => ({ ...current, ticks: current.ticks + 1 }))
+    } else {
+      settleTutorial(circuit, next, tutorial.ticks + 1)
+    }
+  }
+
+  const submitCircuit = () => {
+    if (!activeSection) return
+
+    const next = submitSession(sections, tutorial, circuit, tutorial.ticks)
+    if (next === tutorial) {
+      setSubmitNote('Not accepted yet — check the expected tests.')
+      return
+    }
+
+    setSubmitNote('')
+    applySession(next)
   }
 
   const saveBuilt = () => {
@@ -540,25 +546,15 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
 
   const parts = allComponents()
   const selectedPartDef = circuit.parts.find((part) => part.uid === selectedPart)
-  // Puzzles accept any construction that matches the behavior, so their palette
-  // is not restricted to the gates used by the reference solution.
-  const allowed = activeSection?.mode === 'puzzle' ? undefined : activeSection?.components
-  const preferred = activeSection?.components ?? []
+  // Campaign boards expose only the parts relevant to their procedure, even
+  // while paused; the free bench shows the full catalogue.
+  const preferred = (activeSection ?? focusedSection)?.components ?? []
   const baseParts = parts
     .filter(
       (component) =>
-        component.category !== 'custom' &&
-        (!allowed || allowed.includes(component.id)) &&
-        (activeSection?.mode !== 'puzzle' || PUZZLE_PALETTE.has(component.id)),
+        component.category !== 'custom' && (preferred.length === 0 || preferred.includes(component.id)),
     )
-    .sort((left, right) => {
-      const leftIndex = preferred.indexOf(left.id)
-      const rightIndex = preferred.indexOf(right.id)
-      if (leftIndex === -1 && rightIndex === -1) return 0
-      if (leftIndex === -1) return 1
-      if (rightIndex === -1) return -1
-      return leftIndex - rightIndex
-    })
+    .sort((left, right) => preferred.indexOf(left.id) - preferred.indexOf(right.id))
   const builtParts = parts.filter((component) => component.category === 'custom')
   const wireDrag = drag?.kind === 'wire' ? drag : null
   const wireStart = wireDrag ? anchorOf(circuit, wireDrag.from) : undefined
@@ -599,7 +595,6 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
       onLoadDesign={loadSaved}
       onDeleteDesign={deleteSaved}
       onClear={() => commit(EMPTY_CIRCUIT)}
-      onResetBay={resetBay}
       onOpenManual={onOpenManual}
       allowSave={features.saveDesign}
       allowLibrary={features.library}
@@ -646,10 +641,11 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
           onStartPart={startPalette}
           onAddPart={addFromTray}
           onShowDoc={setDocId}
-          onBrowseDocs={() => setBrowserOpen(true)}
           allowDocs={features.componentDocs}
           allowLibrary={features.library}
           preferred={preferred}
+          gateCount={circuit.parts.length}
+          gateLimit={gateLimit}
           compact={Boolean(focusSectionId)}
         />
 
@@ -748,31 +744,50 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
 
         {focusSectionId ? (
           <aside className="level-bench-side" aria-label="Work order and bench controls">
-            {activeSection && <ExpectedTests goal={activeSection.goal} />}
-            {activeSection && !puzzleMode && activeStep && (
-              <TutorialPanel
-                section={activeSection}
-                stepIndex={tutorial.stepIndex}
-                onExit={exitTutorial}
-                onOpenManual={onOpenManual}
-                compact
-              />
-            )}
-            {activeSection && puzzleMode && <PuzzleBrief section={activeSection} />}
-            {renderInspector()}
+            <div className="level-bench-side-main">
+              {activeSection && !puzzleMode && activeStep && (
+                <TutorialPanel
+                  section={activeSection}
+                  stepIndex={tutorial.stepIndex}
+                  onExit={exitTutorial}
+                  onOpenManual={onOpenManual}
+                  compact
+                />
+              )}
+              {activeSection && puzzleMode && <PuzzleBrief section={activeSection} />}
+              {activeSection && <ExpectedTests goal={activeSection.goal} />}
+              {renderInspector()}
+            </div>
+            <div className="level-bench-side-actions">
+              {activeSection && (
+                <button type="button" className="bench-submit" onClick={submitCircuit}>
+                  Submit
+                </button>
+              )}
+              {onOpenManual && (
+                <button type="button" className="level-action" onClick={() => onOpenManual('circuits')}>
+                  Manual
+                </button>
+              )}
+              <button
+                type="button"
+                className="bench-reset"
+                onClick={resetBay}
+                title="Clear this bay's circuit, inputs, and clock count"
+              >
+                Reset bay
+              </button>
+              {submitNote && (
+                <p className="level-bench-submit-note" role="status">
+                  {submitNote}
+                </p>
+              )}
+            </div>
           </aside>
         ) : (
           renderInspector()
         )}
       </div>
-
-      {browserOpen && (
-        <ComponentBrowser
-          onClose={() => setBrowserOpen(false)}
-          onSelectComponent={setDocId}
-          escapeDisabled={Boolean(docId)}
-        />
-      )}
 
       {docId && <ComponentDoc componentId={docId} onClose={() => setDocId(null)} />}
 

@@ -741,13 +741,16 @@ html:has(.deck-select) {
 
 /* Fixed deck rail: the active ring follows the deck at the reading line. */
 .deck-jump-rail {
+  /* Reserve the widest readout so the circle centre stays put as decks change. */
+  --rail-width: 244px;
   position: fixed;
   top: 50%;
   left: max(18px, env(safe-area-inset-left));
   z-index: 30;
   display: flex;
+  width: var(--rail-width);
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   transform: translateY(-50%);
   padding: 0;
@@ -760,6 +763,7 @@ html:has(.deck-select) {
   position: relative;
   z-index: 1;
   display: flex;
+  align-self: stretch;
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
@@ -1190,6 +1194,7 @@ html:has(.deck-select) {
   }
 
   .deck-jump-rail {
+    --rail-width: 266px;
     left: max(18px, env(safe-area-inset-left));
     gap: 14px;
   }
@@ -1310,6 +1315,7 @@ html:has(.deck-select) {
   }
 
   .deck-jump-rail {
+    --rail-width: 204px;
     left: max(16px, env(safe-area-inset-left));
     gap: 10px;
   }

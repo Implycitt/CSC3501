@@ -82,6 +82,29 @@ export function settleSession(
   return completeStep(section, current, step.id)
 }
 
+export function submitSession(
+  sections: readonly TutorialSection[],
+  session: TutorialSession,
+  circuit: Circuit,
+  ticks: number = session.ticks,
+): TutorialSession {
+  if (session.paused) return session
+
+  const section = findSection(sections, session.sectionId)
+  if (!section || isSectionComplete(session.progress, section)) return session
+
+  if (ticks < (section.goal?.requiredTicks ?? 0)) return session
+  if (!section.goal || !matchesCircuitGoal(circuit, section.goal)) return session
+
+  return {
+    progress: markSectionComplete(session.progress, section),
+    sectionId: null,
+    stepIndex: 0,
+    ticks,
+    paused: false,
+  }
+}
+
 export function advanceSession(sections: readonly TutorialSection[], session: TutorialSession): TutorialSession {
   if (session.paused) return session
 

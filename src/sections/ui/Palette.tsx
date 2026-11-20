@@ -17,10 +17,11 @@ interface PaletteProps {
   onStartPart: (componentId: string, e: ReactPointerEvent) => void
   onAddPart: (componentId: string) => void
   onShowDoc: (componentId: string) => void
-  onBrowseDocs: () => void
   allowDocs: boolean
   allowLibrary: boolean
   preferred?: string[]
+  gateCount?: number
+  gateLimit?: number
   compact?: boolean
 }
 
@@ -30,6 +31,7 @@ function PaletteItem({
   onAddPart,
   onShowDoc,
   allowDocs,
+  disabled = false,
   compact = false,
 }: {
   part: ComponentDef
@@ -37,22 +39,30 @@ function PaletteItem({
   onAddPart: PaletteProps['onAddPart']
   onShowDoc: PaletteProps['onShowDoc']
   allowDocs: boolean
+  disabled?: boolean
   compact?: boolean
 }) {
   const skin = skinFor(part.id)
   const accent = accentClass(skin.accent)
+  const showDocs = allowDocs || compact
 
   return (
     <div
       data-tutorial={`palette:${part.id}`}
       role={compact ? 'listitem' : undefined}
-      title={compact ? `Drag ${part.name} onto the board, or use +` : undefined}
-      onPointerDown={(e) => onStartPart(part.id, e)}
-      className={
-        compact
-          ? 'palette-chip flex shrink-0 cursor-grab items-center gap-1 border edge py-1 pl-1.5 pr-2 edge-hover'
-          : 'flex cursor-grab items-center justify-between gap-1 border edge py-1 pl-1.5 pr-2 edge-hover'
+      title={
+        disabled
+          ? 'Gate limit reached — remove a gate to add another'
+          : compact
+            ? `Drag ${part.name} onto the board, or use +`
+            : undefined
       }
+      aria-disabled={disabled || undefined}
+      onPointerDown={(e) => {
+        if (disabled) return
+        onStartPart(part.id, e)
+      }}
+      className={`${compact ? 'palette-chip flex shrink-0 cursor-grab items-center gap-1 border edge py-1 pl-1.5 pr-2 edge-hover' : 'flex cursor-grab items-center justify-between gap-1 border edge py-1 pl-1.5 pr-2 edge-hover'}${disabled ? ' is-disabled' : ''}`}
     >
       <span className={compact ? 'palette-chip-main flex min-w-0 flex-1 items-center gap-2' : 'flex min-w-0 items-center gap-2'}>
         <PartGlyph glyph={skin.glyph} image={skin.image} className={`accent-ink h-3 w-5 shrink-0 ${accent}`} />
@@ -65,6 +75,7 @@ function PaletteItem({
             type="button"
             aria-label={`Add ${part.name} to the board`}
             title={`Add ${part.name} to the board`}
+            disabled={disabled}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation()
@@ -75,7 +86,7 @@ function PaletteItem({
             +
           </button>
         )}
-        {allowDocs && (
+        {showDocs && (
           <button
             type="button"
             aria-label={`About ${part.name}`}
@@ -98,10 +109,11 @@ export default function Palette({
   onStartPart,
   onAddPart,
   onShowDoc,
-  onBrowseDocs,
   allowDocs,
   allowLibrary,
   preferred = [],
+  gateCount = 0,
+  gateLimit,
   compact = false,
 }: PaletteProps) {
   const [query, setQuery] = useState('')
@@ -110,6 +122,7 @@ export default function Palette({
   const partsMatches = parts.filter(visible)
   const builtMatches = built.filter(visible)
   const total = parts.length + built.length
+  const atLimit = gateLimit !== undefined && gateCount >= gateLimit
 
   if (compact) {
     const suggested = new Set(preferred)
@@ -127,10 +140,16 @@ export default function Palette({
 
     return (
       <div data-tutorial="palette" className="palette-rail">
-        <span className="palette-rail-label">
+        <span className={`palette-rail-label${atLimit ? ' is-full' : ''}`}>
           Parts
-          <em>{total} · drag or tap +</em>
+          <em>{gateLimit !== undefined ? `${gateCount}/${gateLimit} gates` : `${total} · drag or tap +`}</em>
         </span>
+
+        {atLimit && (
+          <p className="palette-limit-note" role="status">
+            Gate limit reached · remove a gate to rewire
+          </p>
+        )}
 
         {total > 8 && (
           <input
@@ -159,6 +178,7 @@ export default function Palette({
                     onAddPart={onAddPart}
                     onShowDoc={onShowDoc}
                     allowDocs={allowDocs}
+                    disabled={atLimit}
                     compact
                   />
                 ))}
@@ -181,6 +201,7 @@ export default function Palette({
                     onAddPart={onAddPart}
                     onShowDoc={onShowDoc}
                     allowDocs={allowDocs}
+                    disabled={atLimit}
                     compact
                   />
                 ))}
@@ -190,18 +211,6 @@ export default function Palette({
         </div>
 
         {empty && <p className="palette-empty">No parts match “{query.trim()}”.</p>}
-
-        {allowDocs && (
-          <button
-            type="button"
-            onClick={onBrowseDocs}
-            aria-label="Browse all component references"
-            title="Browse all component references"
-            className="shrink-0 border edge px-2 py-1 text-[9px] uppercase tracking-wider ink-faint edge-hover hover-ink"
-          >
-            Reference
-          </button>
-        )}
       </div>
     )
   }
@@ -215,12 +224,6 @@ export default function Palette({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-      )}
-
-      {allowDocs && (
-        <button type="button" onClick={onBrowseDocs} className="btn block w-full text-xs">
-          Browse component reference
-        </button>
       )}
 
       <div className="min-h-0 space-y-4 overflow-y-auto pr-1">
