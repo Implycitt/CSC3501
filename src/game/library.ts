@@ -15,6 +15,7 @@ export interface StorageLike {
 
 export const DESIGNS_KEY = 'csc3501.designs.v1'
 export const MAX_NAME_LENGTH = 60
+const SAVE_PREFIX = 'csc3501.'
 
 type JsonObject = Record<string, unknown>
 
@@ -209,4 +210,12 @@ export function removeDesign(id: string, storage: StorageLike | undefined = defa
 export function designsUsing(designs: SavedDesign[], id: string): SavedDesign[] {
   const defId = builtId(id)
   return designs.filter((design) => design.circuit.parts.some((part) => part.componentId === defId))
+}
+
+/** Removes everything the game has saved except the player's saved designs. */
+export function resetProgress(storage: Pick<Storage, 'length' | 'key' | 'removeItem'>): void {
+  const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index))
+  for (const key of keys) {
+    if (key?.startsWith(SAVE_PREFIX) && key !== DESIGNS_KEY) storage.removeItem(key)
+  }
 }

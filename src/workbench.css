@@ -308,6 +308,38 @@
   line-height: 1.35;
 }
 
+.expected-tests.is-failed {
+  border-top-color: var(--palette-ink-danger);
+}
+
+.expected-tests.is-failed .level-unit-kind {
+  color: var(--palette-ink-danger);
+}
+
+.expected-test-row.is-failed {
+  border-left-color: var(--palette-ink-danger);
+  background: rgb(224 138 196 / 0.09);
+}
+
+.expected-test-got {
+  color: var(--palette-ink-danger);
+}
+
+.expected-tests-toggle {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--palette-ink-soft);
+  font: inherit;
+  letter-spacing: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.expected-tests-toggle:hover {
+  color: var(--palette-ink-strong);
+}
+
 /* Board ------------------------------------------------------------------ */
 
 .level-bench-canvas {
