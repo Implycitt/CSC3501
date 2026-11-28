@@ -19,7 +19,7 @@ This covers every relay in the campaign, every firmware terminal, the seven stor
 - Select a part or wire to remove it. `Delete` removes the selected part; the Inspector also has **Remove part** and **Remove wire** buttons.
 - Toggle normal inputs in the live signal strip, or by clicking the input node on the board.
 - For clocked bays, press **tick** in the signal strip (the circular-arrow button) to advance one clock edge. The `clk` node is also a tick shortcut.
-- A puzzle bay validates the whole truth table or clock trace automatically. There is no separate Submit button: when the behavior is correct, the relay completes.
+- Press **Submit** to check a puzzle bay against the whole truth table or clock trace. A rejected submission lists the failing cases under **Failed cases**, with the value your circuit produced.
 - Bays autosave their circuit, input values, nets, and tick count. If you leave and come back, you resume where you stopped. Use the small **reset bay** control in the Inspector to clear that bay and start it over.
 
 ### Running firmware

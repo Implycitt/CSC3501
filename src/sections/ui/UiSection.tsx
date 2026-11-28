@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { allComponents, builtId, getComponent } from '../../game/registry.ts'
+import { checkCircuitGoal, type GoalReport } from '../../game/behavior.ts'
 import { connectWire, EMPTY_CIRCUIT, rekeyCircuit, type Circuit, type PlacedPart, type Wire } from '../../game/circuit.ts'
 import { addDesign, designsUsing, loadDesigns, removeDesign, type SavedDesign } from '../../game/library.ts'
 import {
@@ -87,6 +88,11 @@ interface InitialBench {
   sim: Sim
 }
 
+interface Submission {
+  note: string
+  report?: GoalReport
+}
+
 function initialBench(sections: TutorialSection[], focusSectionId?: string): InitialBench {
   const progress = loadProgress()
   const tutorial = startSession(sections, progress)
@@ -124,7 +130,7 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
   const [selectedPart, setSelectedPart] = useState<string | null>(null)
   const [nameDraft, setNameDraft] = useState('')
   const [status, setStatus] = useState('')
-  const [submitNote, setSubmitNote] = useState('')
+  const [submission, setSubmission] = useState<Submission | null>(null)
   const [scale, setScale] = useState(1)
   const rootRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -224,7 +230,7 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
     const nextSim = createSim(next)
     setCircuit(next)
     setSim(nextSim)
-    setSubmitNote('')
+    setSubmission(null)
     if (!focusSectionId) settleTutorial(next, nextSim)
   }
 
@@ -369,7 +375,7 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
 
   const addPart = (componentId: string, x: number, y: number) => {
     if (gateLimit !== undefined && circuit.parts.length >= gateLimit) {
-      setSubmitNote(`Gate limit reached (${gateLimit}). Remove a gate to try another combination.`)
+      setSubmission({ note: `Gate limit reached (${gateLimit}). Remove a gate to try another combination.` })
       return
     }
 
@@ -438,20 +444,18 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
     latestBench.current = { circuit: next, sim: nextSim, ticks: 0 }
     setCircuit(next)
     setSim(nextSim)
-    setSubmitNote('')
+    setSubmission(null)
     setTutorial((current) => ({ ...current, ticks: 0 }))
   }
 
   const toggleInput = (name: string) => {
     const next = advance(sim, { ...sim.values, [name]: !sim.values[name] }, false)
     setSim(next)
-    setSubmitNote('')
     if (!focusSectionId) settleTutorial(circuit, next)
   }
   const clockTick = () => {
     const next = advance(sim, sim.values, true)
     setSim(next)
-    setSubmitNote('')
     if (focusSectionId) {
       setTutorial((current) => ({ ...current, ticks: current.ticks + 1 }))
     } else {
@@ -463,13 +467,22 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
     if (!activeSection) return
 
     const next = submitSession(sections, tutorial, circuit, tutorial.ticks)
-    if (next === tutorial) {
-      setSubmitNote('Not accepted yet — check the expected tests.')
+    if (next !== tutorial) {
+      setSubmission(null)
+      applySession(next)
       return
     }
 
-    setSubmitNote('')
-    applySession(next)
+    const report = activeSection.goal ? checkCircuitGoal(circuit, activeSection.goal) : undefined
+    const rejected = report && (report.failures.length > 0 || report.error) ? report : undefined
+    let note = 'Not accepted yet — check the expected tests.'
+    if (report?.error) {
+      note = `Not accepted — ${report.error}.`
+    } else if (report && report.failures.length > 0) {
+      const noun = activeSection.goal?.traces?.length ? 'steps' : 'cases'
+      note = `Not accepted — ${report.failures.length} of ${report.checked} ${noun} failed. See Failed cases above.`
+    }
+    setSubmission({ note, report: rejected })
   }
 
   const saveBuilt = () => {
@@ -755,7 +768,7 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
                 />
               )}
               {activeSection && puzzleMode && <PuzzleBrief section={activeSection} />}
-              {activeSection && <ExpectedTests goal={activeSection.goal} />}
+              {activeSection && <ExpectedTests goal={activeSection.goal} report={submission?.report} />}
               {renderInspector()}
             </div>
             <div className="level-bench-side-actions">
@@ -777,9 +790,9 @@ function Build({ focusSectionId, onSectionComplete, onOpenManual }: UiSectionPro
               >
                 Reset bay
               </button>
-              {submitNote && (
+              {submission && (
                 <p className="level-bench-submit-note" role="status">
-                  {submitNote}
+                  {submission.note}
                 </p>
               )}
             </div>
